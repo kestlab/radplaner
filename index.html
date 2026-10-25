@@ -1,0 +1,3100 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Radsport-Planer</title>
+<meta name="description" content="Pacing-Strategie für Radmarathon, Zeitfahren und Training aus GPX, FTP und Physikmodell">
+<meta name="theme-color" content="#e7eff0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0b1519" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Radplaner">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+:root { padding-top: env(safe-area-inset-top, 0px); }
+/* Layout: Glas-Panels über einem Höhenlinien-Feld · iPad: Seitenleiste · iPhone: Tab-Leiste unten */
+:root {
+  --bg: #e7eff0;
+  --fg: #12202a;
+  --fg2: #43535d;
+  --muted: #6b7c85;
+  --accent: #0e6f68;
+  --accent-fg: #ffffff;
+  --accent-soft: rgba(14, 111, 104, .12);
+  --glass: rgba(255, 255, 255, .55);
+  --glass-strong: rgba(255, 255, 255, .78);
+  --glass-border: rgba(255, 255, 255, .85);
+  --hair: rgba(18, 32, 42, .10);
+  --field: rgba(255, 255, 255, .7);
+  --shadow: 0 12px 32px rgba(16, 44, 52, .10);
+  --contour: rgba(14, 96, 100, .16);
+  --blob1: rgba(64, 186, 176, .34);
+  --blob2: rgba(240, 134, 78, .26);
+  --blob3: rgba(122, 172, 222, .32);
+  --z1: #e68a58; --z2: #dd6d28; --z3: #cf5200; --z4: #b93d00; --z5: #a02c00; --z6: #842100; --z7: #661b00;
+  --roll: #c4cfd4;
+  --grid: rgba(18, 32, 42, .09);
+  --warn: #9a4a00;
+  --warn-bg: rgba(230, 138, 88, .16);
+  --font-display: "Barlow Condensed", "Arial Narrow", "Helvetica Neue", system-ui, sans-serif;
+  --font-body: "Barlow", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --r-lg: 22px;
+  --r-md: 14px;
+  --r-sm: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1519; --fg: #e6eff1; --fg2: #a7b9c0; --muted: #7d929a;
+    --accent: #4fd1c5; --accent-fg: #062521; --accent-soft: rgba(79, 209, 197, .14);
+    --glass: rgba(20, 34, 42, .56); --glass-strong: rgba(24, 40, 49, .82); --glass-border: rgba(255, 255, 255, .09);
+    --hair: rgba(255, 255, 255, .10); --field: rgba(8, 18, 23, .5); --shadow: 0 14px 36px rgba(0, 0, 0, .35);
+    --contour: rgba(120, 224, 212, .09); --blob1: rgba(30, 140, 132, .30); --blob2: rgba(200, 90, 40, .20); --blob3: rgba(40, 80, 140, .30);
+    --z1: #974600; --z2: #b95000; --z3: #d36200; --z4: #ea7719; --z5: #f9924d; --z6: #ffae7a; --z7: #ffcdaa;
+    --roll: #3b4b53; --grid: rgba(255, 255, 255, .07); --warn: #ffb27a; --warn-bg: rgba(234, 119, 25, .14);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1519; --fg: #e6eff1; --fg2: #a7b9c0; --muted: #7d929a;
+  --accent: #4fd1c5; --accent-fg: #062521; --accent-soft: rgba(79, 209, 197, .14);
+  --glass: rgba(20, 34, 42, .56); --glass-strong: rgba(24, 40, 49, .82); --glass-border: rgba(255, 255, 255, .09);
+  --hair: rgba(255, 255, 255, .10); --field: rgba(8, 18, 23, .5); --shadow: 0 14px 36px rgba(0, 0, 0, .35);
+  --contour: rgba(120, 224, 212, .09); --blob1: rgba(30, 140, 132, .30); --blob2: rgba(200, 90, 40, .20); --blob3: rgba(40, 80, 140, .30);
+  --z1: #974600; --z2: #b95000; --z3: #d36200; --z4: #ea7719; --z5: #f9924d; --z6: #ffae7a; --z7: #ffcdaa;
+  --roll: #3b4b53; --grid: rgba(255, 255, 255, .07); --warn: #ffb27a; --warn-bg: rgba(234, 119, 25, .14);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  font-variant-numeric: tabular-nums;
+}
+#terrain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blobs { position: fixed; inset: -10%; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 15% 20%, var(--blob1), transparent 70%),
+    radial-gradient(35% 30% at 85% 15%, var(--blob3), transparent 70%),
+    radial-gradient(45% 40% at 75% 85%, var(--blob2), transparent 72%);
+}
+
+.app { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr; min-height: 100vh; }
+main {
+  min-width: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 18px calc(110px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+  max-width: 1180px; width: 100%; margin: 0 auto;
+}
+
+/* Glas */
+.glass {
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5);
+  backdrop-filter: blur(22px) saturate(1.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow);
+}
+.card { padding: 18px; min-width: 0; }
+.card > h2, .card-h { margin: 0 0 12px; }
+
+/* Typografie */
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; letter-spacing: .01em; text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: 32px; }
+h2 { font-size: 22px; }
+h3 { font-size: 18px; }
+.eyebrow { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.sub { color: var(--fg2); font-size: 14px; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+p { margin: 0; }
+
+/* Navigation */
+.tabs {
+  position: fixed; z-index: 20;
+  left: max(12px, env(safe-area-inset-left, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 2px; padding: 6px;
+  border-radius: 24px;
+  background: var(--glass-strong);
+}
+.tabs .brand { display: none; }
+.tab {
+  appearance: none; border: 0; background: transparent; color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 7px 2px 6px; border-radius: 18px; font: 600 11px/1.1 var(--font-body); cursor: pointer;
+}
+.tab svg { width: 23px; height: 23px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.tab[aria-current="page"] { color: var(--accent); background: var(--accent-soft); }
+.tab:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, .chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (min-width: 860px) {
+  .app { grid-template-columns: 236px 1fr; }
+  .tabs {
+    position: sticky; top: 16px; left: auto; right: auto; bottom: auto;
+    margin: 16px 0 16px max(16px, env(safe-area-inset-left, 0px));
+    height: calc(100vh - 32px);
+    display: flex; flex-direction: column; gap: 4px; padding: 18px 12px;
+  }
+  .tabs .brand { display: block; padding: 4px 10px 18px; }
+  .tab { flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 14px; font-size: 15px; border-radius: 14px; }
+  .tab svg { width: 21px; height: 21px; }
+  main { padding-block: 22px 40px; }
+}
+.brand .logo { font-family: var(--font-display); font-weight: 700; font-size: 23px; letter-spacing: .01em; line-height: 1; }
+.brand .logo span { color: var(--accent); }
+.brand .tag { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
+
+/* Kopf */
+.head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 4px 4px 0; }
+.head .titles { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.routechip { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; font-size: 13.5px; font-weight: 600; max-width: 100%; }
+.routechip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex: none; }
+.routechip span.name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge { display: inline-block; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); }
+
+.view[hidden] { display: none !important; }
+.view { display: flex; flex-direction: column; gap: 16px; }
+.grid2 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+.grid3 { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 720px) { .grid2 { grid-template-columns: 1fr 1fr; } .grid3 { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1100px) { .grid3 { grid-template-columns: repeat(3, 1fr); } }
+
+/* Formulare */
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px 14px; }
+.field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field.wide { grid-column: 1 / -1; }
+.field label, .lbl { font-size: 12.5px; font-weight: 600; color: var(--fg2); }
+.inp { position: relative; display: flex; align-items: center; }
+.inp input, .inp select, select.sel, input.txt {
+  width: 100%; min-width: 0; font: 500 16px/1.2 var(--font-body); color: var(--fg);
+  background: var(--field); border: 1px solid var(--hair); border-radius: var(--r-sm);
+  padding: 10px 12px; appearance: none; -webkit-appearance: none; font-variant-numeric: tabular-nums;
+}
+.inp select, select.sel { padding-right: 32px; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: calc(100% - 17px) 50%, calc(100% - 12px) 50%; background-size: 5px 5px; background-repeat: no-repeat; }
+.inp .unit { position: absolute; right: 12px; color: var(--muted); font-size: 13px; pointer-events: none; }
+.inp input.has-unit { padding-right: 46px; }
+.hint { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.note { font-size: 13.5px; color: var(--fg2); background: var(--accent-soft); border-radius: var(--r-md); padding: 10px 12px; }
+.note.warn { background: var(--warn-bg); color: var(--fg); }
+.section-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.divider { height: 1px; background: var(--hair); margin: 16px 0; }
+
+.seg { display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; padding: 3px; border-radius: 13px; background: var(--field); border: 1px solid var(--hair); width: 100%; }
+.seg button { appearance: none; border: 0; background: transparent; color: var(--fg2); font: 600 13.5px/1.15 var(--font-body); padding: 9px 6px; border-radius: 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--glass-strong); color: var(--fg); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+
+.range { display: flex; flex-direction: column; gap: 6px; }
+.range .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.range output { font-family: var(--font-display); font-size: 22px; font-weight: 600; }
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 28px; background: transparent; }
+input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) var(--p, 50%), var(--hair) var(--p, 50%)); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 24px; height: 24px; margin-top: -9px; border-radius: 50%; background: var(--glass-strong); border: 2px solid var(--accent); box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--hair); }
+input[type="range"]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--accent); }
+input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%; background: var(--glass-strong); border: 2px solid var(--accent); }
+
+.btn { appearance: none; border: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px/1 var(--font-body); padding: 13px 18px; border-radius: 14px; background: var(--accent); color: var(--accent-fg); text-decoration: none; }
+.btn.ghost { background: var(--field); color: var(--fg); border: 1px solid var(--hair); }
+.btn.small { padding: 9px 12px; font-size: 13.5px; border-radius: 11px; }
+.btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btnrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+details.more { border-top: 1px solid var(--hair); margin-top: 14px; padding-top: 12px; }
+details.more summary { cursor: pointer; font-weight: 600; color: var(--accent); list-style: none; display: flex; align-items: center; gap: 6px; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::before { content: "+"; display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; background: var(--accent-soft); font-weight: 700; }
+details.more[open] summary::before { content: "–"; }
+details.more > div { margin-top: 12px; display: flex; flex-direction: column; gap: 12px; }
+
+/* Kennzahlen */
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (min-width: 560px) { .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.kpi { padding: 12px 14px; border-radius: var(--r-md); background: var(--field); border: 1px solid var(--hair); min-width: 0; }
+.kpi .k { font-size: 12px; font-weight: 600; color: var(--fg2); }
+.kpi .v { font-family: var(--font-display); font-size: 30px; font-weight: 600; line-height: 1.05; margin-top: 2px; white-space: nowrap; }
+.kpi .v small { font-family: var(--font-body); font-size: 13px; font-weight: 500; color: var(--fg2); margin-left: 3px; }
+.kpi.hero { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.kpi.hero .k, .kpi.hero .v small { color: var(--accent-fg); opacity: .85; }
+
+/* Strategie-Liste */
+.strat { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.strat li { display: grid; grid-template-columns: 150px 1fr; gap: 10px; align-items: baseline; }
+.strat .k { font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
+@media (max-width: 520px) { .strat li { grid-template-columns: 1fr; gap: 2px; } }
+
+/* Diagramme */
+.chartwrap { position: relative; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+.chartwrap svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-label { font: 600 12px var(--font-body); fill: var(--fg2); }
+.axis-text { font: 500 11px var(--font-body); fill: var(--muted); }
+.climb-num { font: 700 12px var(--font-display); fill: var(--fg); }
+.tip { position: absolute; top: 0; pointer-events: none; padding: 9px 11px; border-radius: 12px; background: var(--glass-strong); border: 1px solid var(--glass-border); box-shadow: var(--shadow); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); font-size: 12.5px; line-height: 1.45; min-width: 150px; z-index: 3; }
+.tip b { font-family: var(--font-display); font-size: 17px; font-weight: 600; }
+.tip .tr { display: flex; justify-content: space-between; gap: 14px; }
+.tip .tr span:first-child { color: var(--fg2); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; color: var(--fg2); margin-top: 10px; }
+.legend i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+/* Zonenbalken */
+.zones { display: grid; gap: 8px; }
+.zrow { display: grid; grid-template-columns: 128px 1fr auto; gap: 10px; align-items: center; font-size: 13px; }
+.zrow .bar { height: 12px; border-radius: 0 4px 4px 0; min-width: 2px; }
+.zrow .val { text-align: right; color: var(--fg2); white-space: nowrap; }
+@media (max-width: 420px) { .zrow { grid-template-columns: 92px 1fr auto; font-size: 12px; } }
+
+/* Tabellen */
+.tablewrap { overflow-x: auto; margin: 0 -18px; padding: 0 18px; -webkit-overflow-scrolling: touch; }
+table.t { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13.5px; min-width: 760px; }
+table.t th { text-align: left; font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); font-weight: 700; padding: 6px 8px; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+table.t td { padding: 9px 8px; border-bottom: 1px solid var(--hair); white-space: nowrap; }
+table.t td.num, table.t th.num { text-align: right; }
+table.t tbody tr { cursor: pointer; }
+table.t tbody tr:hover td { background: var(--accent-soft); }
+table.t tbody tr.sel td { background: var(--accent-soft); }
+.zchip { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 7px; vertical-align: 0; }
+.watt { font-family: var(--font-display); font-size: 18px; font-weight: 600; }
+.tri { display: inline-block; width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent; margin-right: 6px; vertical-align: 1px; }
+.tri.up { border-bottom: 8px solid var(--fg); }
+.tri.down { border-top: 8px solid var(--muted); }
+.tri.flat { width: 10px; height: 2px; background: var(--muted); border: 0; vertical-align: 3px; }
+
+/* Anstiegskarten */
+.climbs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.climb { padding: 14px; border-radius: var(--r-md); background: var(--field); border: 1px solid var(--hair); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.climb .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.climb .no { font-family: var(--font-display); font-weight: 700; font-size: 20px; }
+.climb .w { font-family: var(--font-display); font-weight: 700; font-size: 30px; line-height: 1; }
+.climb .w small { font-size: 14px; font-weight: 600; color: var(--fg2); margin-left: 2px; }
+.climb .facts { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 13px; color: var(--fg2); }
+.climb svg { width: 100%; height: 54px; display: block; }
+
+/* Strecke */
+.dropzone { border: 1.5px dashed var(--hair); border-radius: var(--r-md); padding: 18px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; }
+.dropzone.drag { border-color: var(--accent); background: var(--accent-soft); }
+.routes { display: flex; flex-direction: column; gap: 8px; }
+.ritem { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); background: var(--field); border: 1px solid var(--hair); }
+.ritem.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.ritem .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.ritem .meta { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.iconbtn { appearance: none; border: 0; background: transparent; color: var(--muted); padding: 6px; border-radius: 8px; cursor: pointer; display: inline-grid; place-items: center; }
+.iconbtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; }
+.outline svg { width: 100%; height: auto; display: block; }
+.stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+
+/* Export */
+.preview { display: flex; gap: 14px; overflow-x: auto; padding: 6px 2px 10px; }
+.preview canvas { flex: none; border-radius: 4px; box-shadow: 0 6px 20px rgba(0,0,0,.18); background: #fff; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom, 0px)); z-index: 40; padding: 11px 16px; border-radius: 14px; background: var(--glass-strong); border: 1px solid var(--glass-border); box-shadow: var(--shadow); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); font-weight: 600; font-size: 14px; max-width: calc(100% - 32px); }
+@media (min-width: 860px) { .toast { bottom: 28px; } }
+
+/* Methodik */
+.method { display: grid; gap: 14px; }
+.method h3 { color: var(--accent); margin-bottom: 4px; }
+.method p { max-width: 72ch; color: var(--fg); }
+.sources { display: grid; gap: 8px; font-size: 13.5px; color: var(--fg2); padding-left: 18px; margin: 0; }
+
+.spinner { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--hair); border-top-color: var(--accent); animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+
+/* Schritte in der Plan-Steuerung */
+.step { display: grid; grid-template-columns: 30px 1fr; gap: 12px; align-items: start; }
+.step + .step { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--hair); }
+.stepno { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font: 700 16px/1 var(--font-display); }
+.stepbody { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.seg.small button { font-size: 13px; padding: 8px 4px; }
+.intin[hidden] { display: none; }
+.ifscale { position: relative; padding-bottom: 18px; margin-top: 2px; }
+.ifscale .bands { display: flex; gap: 2px; height: 26px; border-radius: 8px; overflow: hidden; }
+.ifscale .bands span { display: grid; place-items: center; font-size: 11px; font-weight: 600; color: var(--fg2); background: var(--accent-soft); white-space: nowrap; overflow: hidden; min-width: 0; }
+.ifscale .bands span:nth-child(2) { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.ifscale .bands span:nth-child(3) { background: color-mix(in srgb, var(--accent) 32%, transparent); }
+.ifscale .bands span:nth-child(4) { background: color-mix(in srgb, var(--accent) 44%, transparent); color: var(--fg); }
+.ifscale .bands span:nth-child(5) { background: color-mix(in srgb, var(--accent) 56%, transparent); color: var(--fg); }
+.ifscale .marker { position: absolute; top: -5px; width: 3px; height: 36px; margin-left: -1.5px; border-radius: 2px; background: var(--fg); box-shadow: 0 0 0 2px var(--glass-strong); transition: left .25s ease; }
+.ifscale .ticks { position: absolute; left: 0; right: 0; bottom: 0; height: 14px; }
+.ifscale .ticks span { position: absolute; transform: translateX(-50%); font-size: 10.5px; color: var(--muted); }
+.ifscale .ticks span:first-child { transform: none; }
+.ifscale .ticks span:last-child { transform: translateX(-100%); }
+.live { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: var(--r-md); background: var(--field); border: 1px solid var(--hair); }
+.livegrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px 12px; }
+.livegrid div { display: flex; flex-direction: column; min-width: 0; }
+.livegrid .k { font-size: 11.5px; font-weight: 600; color: var(--fg2); }
+.livegrid b { font-family: var(--font-display); font-size: 22px; font-weight: 600; line-height: 1.1; }
+.livegrid .s { font-size: 11.5px; color: var(--muted); }
+.explain { gap: 10px !important; }
+.explain p, .explain li { font-size: 14px; color: var(--fg); max-width: 72ch; }
+.explain ol { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+@media (prefers-reduced-motion: reduce) { .ifscale .marker { transition: none; } }
+
+/* Zettel-Optionen */
+.checks { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
+.check input, .pick input { width: 20px; height: 20px; accent-color: var(--accent); margin: 0; flex: none; }
+.fit { display: flex; flex-direction: column; gap: 6px; margin-top: 14px; font-size: 13px; color: var(--fg2); }
+.fit.warn { color: var(--warn); }
+.fitbar { height: 6px; border-radius: 3px; background: var(--hair); overflow: hidden; }
+.fitbar i { display: block; height: 100%; background: var(--accent); border-radius: 3px; }
+.fit.warn .fitbar i { background: var(--warn); }
+.picks { display: flex; flex-direction: column; gap: 6px; max-height: 420px; overflow-y: auto; padding-right: 4px; }
+.pick { display: grid; grid-template-columns: 22px 14px 1fr auto; align-items: center; gap: 8px; padding: 9px 10px; border-radius: var(--r-sm); background: var(--field); border: 1px solid var(--hair); font-size: 13.5px; cursor: pointer; }
+.pick.on { border-color: var(--accent); }
+.pick .pt { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick .pw { font-family: var(--font-display); font-weight: 600; font-size: 16px; }
+
+.ifscale .bands i { font-style: normal; }
+.ifscale .bands i.s { display: none; }
+@media (max-width: 560px) { .ifscale .bands i.l { display: none; } .ifscale .bands i.s { display: inline; } }
+.range .row label { flex: 1; min-width: 0; }
+.range output { white-space: nowrap; }
+.livegrid { grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); }
+@media (max-width: 560px) { .livegrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } .livegrid b { font-size: 20px; } }
+
+</style>
+</head>
+<body>
+<canvas id="terrain" aria-hidden="true"></canvas><div class="blobs" aria-hidden="true"></div>
+<div class="app" id="app"></div>
+<script>window.__PWA__ = true; window.__BUILD__ = "202610251257";</script>
+<script>
+/* Helvetica-Laufweiten (AFM, WinAnsi 32–255), aus den Adobe-Core-14-Metriken */
+const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500], B: [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556] };
+
+/* =========================================================================
+   Minimaler PDF-Schreiber (Vektorgrafik + Helvetica, WinAnsi) – ohne
+   externe Bibliotheken, damit die App vollständig offline funktioniert.
+   Koordinaten in mm, Ursprung oben links.
+   ========================================================================= */
+(function (root) {
+  'use strict';
+  const W = (typeof PDF_WIDTHS !== 'undefined') ? PDF_WIDTHS : (typeof require !== 'undefined' ? (function () {
+    const fs = require('fs'), path = require('path');
+    const src = fs.readFileSync(path.join(__dirname, 'pdf-widths.js'), 'utf8');
+    return (new Function(src + '; return PDF_WIDTHS;'))();
+  })() : null);
+
+  const K = 72 / 25.4; // mm → pt
+  const CP1252 = { 0x20AC: 0x80, 0x201A: 0x82, 0x0192: 0x83, 0x201E: 0x84, 0x2026: 0x85, 0x2020: 0x86, 0x2021: 0x87, 0x02C6: 0x88, 0x2030: 0x89, 0x0160: 0x8A, 0x2039: 0x8B, 0x0152: 0x8C, 0x017D: 0x8E, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93, 0x201D: 0x94, 0x2022: 0x95, 0x2013: 0x96, 0x2014: 0x97, 0x02DC: 0x98, 0x2122: 0x99, 0x0161: 0x9A, 0x203A: 0x9B, 0x0153: 0x9C, 0x017E: 0x9E, 0x0178: 0x9F };
+  const SUBST = { '≈': '~', '→': '>', '←': '<', '≤': '<=', '≥': '>=', '×': '×', '−': '-', ' ': ' ', ' ': ' ', ' ': ' ', '▲': '^', '▼': 'v', 'Δ': 'd', '⌀': 'Ø' };
+
+  function toBytes(str) {
+    const out = [];
+    for (const chRaw of String(str)) {
+      const ch = SUBST[chRaw] !== undefined ? SUBST[chRaw] : chRaw;
+      for (const c of ch) {
+        const code = c.codePointAt(0);
+        if (code < 128 || (code >= 0xA0 && code <= 0xFF)) out.push(code);
+        else if (CP1252[code] !== undefined) out.push(CP1252[code]);
+        else out.push(63); // '?'
+      }
+    }
+    return out;
+  }
+
+  function widthOf(str, size, bold) {
+    const tab = bold ? W.B : W.R;
+    let w = 0;
+    for (const b of toBytes(str)) w += (b >= 32 ? tab[b - 32] : 0) || 556;
+    return w / 1000 * size / K; // in mm
+  }
+
+  const f = n => (Math.round(n * 1000) / 1000).toString();
+  const hex = bytes => bytes.map(b => b.toString(16).padStart(2, '0')).join('');
+
+  function parseColor(c) {
+    if (Array.isArray(c)) return c;
+    if (typeof c === 'string' && c[0] === '#') {
+      const h = c.length === 4 ? c.slice(1).split('').map(x => x + x).join('') : c.slice(1);
+      return [parseInt(h.slice(0, 2), 16) / 255, parseInt(h.slice(2, 4), 16) / 255, parseInt(h.slice(4, 6), 16) / 255];
+    }
+    return [0, 0, 0];
+  }
+
+  class Page {
+    constructor(doc, wmm, hmm) { this.doc = doc; this.w = wmm; this.h = hmm; this.ops = []; this.gsUsed = new Set(); }
+    X(x) { return f(x * K); }
+    Y(y) { return f((this.h - y) * K); }
+    fill(c) { const [r, g, b] = parseColor(c); this.ops.push(`${f(r)} ${f(g)} ${f(b)} rg`); return this; }
+    stroke(c) { const [r, g, b] = parseColor(c); this.ops.push(`${f(r)} ${f(g)} ${f(b)} RG`); return this; }
+    lw(mm) { this.ops.push(`${f(mm * K)} w`); return this; }
+    dash(on, off) { this.ops.push(on ? `[${f(on * K)} ${f((off || on) * K)}] 0 d` : '[] 0 d'); return this; }
+    alpha(a) {
+      const key = 'GS' + Math.round(a * 100);
+      this.doc.gstates.add(Math.round(a * 100));
+      this.gsUsed.add(key);
+      this.ops.push(`/${key} gs`); return this;
+    }
+    save() { this.ops.push('q'); return this; }
+    restore() { this.ops.push('Q'); return this; }
+    lineCap(n) { this.ops.push(`${n} J`); return this; }
+    lineJoin(n) { this.ops.push(`${n} j`); return this; }
+    rect(x, y, w, h, mode) {
+      this.ops.push(`${this.X(x)} ${this.Y(y + h)} ${f(w * K)} ${f(h * K)} re ${mode === 'S' ? 'S' : mode === 'B' ? 'B' : 'f'}`); return this;
+    }
+    roundRect(x, y, w, h, r, mode) {
+      r = Math.min(r, w / 2, h / 2);
+      const c = 0.5523 * r;
+      const P = (px, py) => `${this.X(px)} ${this.Y(py)}`;
+      this.ops.push(`${P(x + r, y)} m ${P(x + w - r, y)} l ${P(x + w - r + c, y)} ${P(x + w, y + r - c)} ${P(x + w, y + r)} c ${P(x + w, y + h - r)} l ${P(x + w, y + h - r + c)} ${P(x + w - r + c, y + h)} ${P(x + w - r, y + h)} c ${P(x + r, y + h)} l ${P(x + r - c, y + h)} ${P(x, y + h - r + c)} ${P(x, y + h - r)} c ${P(x, y + r)} l ${P(x, y + r - c)} ${P(x + r - c, y)} ${P(x + r, y)} c h ${mode === 'S' ? 'S' : mode === 'B' ? 'B' : 'f'}`);
+      return this;
+    }
+    line(x1, y1, x2, y2) { this.ops.push(`${this.X(x1)} ${this.Y(y1)} m ${this.X(x2)} ${this.Y(y2)} l S`); return this; }
+    poly(pts, close, mode) {
+      if (!pts.length) return this;
+      let s = `${this.X(pts[0][0])} ${this.Y(pts[0][1])} m`;
+      for (let i = 1; i < pts.length; i++) s += ` ${this.X(pts[i][0])} ${this.Y(pts[i][1])} l`;
+      if (close) s += ' h';
+      s += mode === 'f' ? ' f' : mode === 'B' ? ' B' : ' S';
+      this.ops.push(s); return this;
+    }
+    circle(cx, cy, r, mode) {
+      const c = 0.5523 * r, P = (px, py) => `${this.X(px)} ${this.Y(py)}`;
+      this.ops.push(`${P(cx + r, cy)} m ${P(cx + r, cy + c)} ${P(cx + c, cy + r)} ${P(cx, cy + r)} c ${P(cx - c, cy + r)} ${P(cx - r, cy + c)} ${P(cx - r, cy)} c ${P(cx - r, cy - c)} ${P(cx - c, cy - r)} ${P(cx, cy - r)} c ${P(cx + c, cy - r)} ${P(cx + r, cy - c)} ${P(cx + r, cy)} c h ${mode === 'S' ? 'S' : mode === 'B' ? 'B' : 'f'}`);
+      return this;
+    }
+    clipRect(x, y, w, h) { this.ops.push(`${this.X(x)} ${this.Y(y + h)} ${f(w * K)} ${f(h * K)} re W n`); return this; }
+    // Text: y = Grundlinie (mm von oben)
+    text(str, x, y, o) {
+      o = o || {};
+      const size = o.size || 9, bold = !!o.bold;
+      let s = String(str);
+      if (o.maxW) { // kürzen mit …
+        if (widthOf(s, size, bold) > o.maxW) {
+          while (s.length > 1 && widthOf(s + '…', size, bold) > o.maxW) s = s.slice(0, -1);
+          s += '…';
+        }
+      }
+      const w = widthOf(s, size, bold);
+      let xx = x;
+      if (o.align === 'right') xx = x - w; else if (o.align === 'center') xx = x - w / 2;
+      if (o.color) this.fill(o.color);
+      this.ops.push(`BT /${bold ? 'F2' : 'F1'} ${f(size)} Tf ${this.X(xx)} ${this.Y(y)} Td <${hex(toBytes(s))}> Tj ET`);
+      return w;
+    }
+    // Fließtext mit Umbruch, gibt neue y-Position zurück
+    para(str, x, y, width, o) {
+      o = o || {};
+      const size = o.size || 9, lh = o.lh || size * 0.42;
+      const lines = wrap(str, width, size, !!o.bold);
+      lines.forEach((ln, i) => this.text(ln, x, y + i * lh, o));
+      return y + lines.length * lh;
+    }
+  }
+
+  function wrap(str, width, size, bold) {
+    const out = [];
+    String(str).split('\n').forEach(par => {
+      const words = par.split(/\s+/).filter(Boolean);
+      let line = '';
+      for (const w of words) {
+        const t = line ? line + ' ' + w : w;
+        if (widthOf(t, size, bold) <= width || !line) line = t;
+        else { out.push(line); line = w; }
+      }
+      out.push(line);
+    });
+    return out;
+  }
+
+  class Doc {
+    constructor(meta) { this.pages = []; this.gstates = new Set(); this.meta = meta || {}; }
+    addPage(wmm, hmm) { const p = new Page(this, wmm || 210, hmm || 297); this.pages.push(p); return p; }
+    output() {
+      const objs = [];   // Index = Objektnummer − 1
+      const add = s => { objs.push(s); return objs.length; };
+      const catalog = add(null), pagesObj = add(null);
+      const f1 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>');
+      const f2 = add('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>');
+      const gsRefs = [];
+      for (const a of this.gstates) gsRefs.push(`/GS${a} ${add(`<< /Type /ExtGState /ca ${f(a / 100)} /CA ${f(a / 100)} >>`)} 0 R`);
+      const res = `<< /Font << /F1 ${f1} 0 R /F2 ${f2} 0 R >> /ExtGState << ${gsRefs.join(' ')} >> >>`;
+      const kids = [];
+      for (const pg of this.pages) {
+        const content = pg.ops.join('\n');
+        const cObj = add(`<< /Length ${content.length} >>\nstream\n${content}\nendstream`);
+        const pObj = add(`<< /Type /Page /Parent ${pagesObj} 0 R /MediaBox [0 0 ${f(pg.w * K)} ${f(pg.h * K)}] /Resources ${res} /Contents ${cObj} 0 R >>`);
+        kids.push(`${pObj} 0 R`);
+      }
+      objs[pagesObj - 1] = `<< /Type /Pages /Kids [${kids.join(' ')}] /Count ${kids.length} >>`;
+      objs[catalog - 1] = `<< /Type /Catalog /Pages ${pagesObj} 0 R >>`;
+      const title = hex([0xFE, 0xFF].concat(...Array.from(String(this.meta.title || 'Radsport-Planer')).map(ch => { const c = ch.charCodeAt(0); return [c >> 8, c & 255]; })));
+      const info = add(`<< /Title <${title}> /Producer (Radsport-Planer) /Creator (Radsport-Planer) >>`);
+      let out = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+      const offsets = [];
+      objs.forEach((o, i) => { offsets.push(out.length); out += `${i + 1} 0 obj\n${o}\nendobj\n`; });
+      const xref = out.length;
+      out += `xref\n0 ${objs.length + 1}\n0000000000 65535 f \n`;
+      offsets.forEach(o => { out += String(o).padStart(10, '0') + ' 00000 n \n'; });
+      out += `trailer\n<< /Size ${objs.length + 1} /Root ${catalog} 0 R /Info ${info} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+      const bytes = new Uint8Array(out.length);
+      for (let i = 0; i < out.length; i++) bytes[i] = out.charCodeAt(i) & 255;
+      return bytes;
+    }
+  }
+
+  const API = { Doc, widthOf, wrap };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.PDFLite = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* =========================================================================
+   Radsport-Planer – Rechenkern
+   Physik: Martin et al. (1998) · Pacing: Swain (1997), Atkinson et al. (2007),
+   Cangley et al. (2011) · W'-Bilanz: Skiba et al. (2015) · CP/W': Monod &
+   Scherrer (1965) · NP/IF/TSS & Zonen: Coggan · Trittfrequenz: Lucía et al.
+   (2001) · Kohlenhydrate: Jeukendrup (2014)
+   ========================================================================= */
+(function (root) {
+  'use strict';
+
+  const G = 9.80665;          // Normfallbeschleunigung m/s²
+  const R_EARTH = 6371008.8;  // mittlerer Erdradius m
+  const R_AIR = 287.05;       // spez. Gaskonstante trockene Luft J/(kg·K)
+  const STEP = 20;            // Rechenschritt in m
+
+  /* ---------------------------------------------------------------- GPX */
+  function decodeEntities(s) {
+    return String(s || '')
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+      .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(+n))
+      .trim();
+  }
+
+  function pickPoints(text, tag) {
+    const re = new RegExp('<(?:[\\w-]+:)?' + tag + '\\b([^>]*?)(?:\\/>|>([\\s\\S]*?)<\\/(?:[\\w-]+:)?' + tag + '\\s*>)', 'gi');
+    const out = [];
+    let m;
+    while ((m = re.exec(text))) {
+      const a = m[1];
+      const lat = parseFloat((a.match(/\blat\s*=\s*["']([^"']+)["']/i) || [])[1]);
+      const lon = parseFloat((a.match(/\blon\s*=\s*["']([^"']+)["']/i) || [])[1]);
+      let ele = NaN;
+      if (m[2]) {
+        const e = m[2].match(/<(?:[\w-]+:)?ele\s*>\s*([^<]+)</i);
+        if (e) ele = parseFloat(e[1]);
+      }
+      if (isFinite(lat) && isFinite(lon)) out.push({ lat, lon, ele });
+    }
+    return out;
+  }
+
+  function parseGPX(text) {
+    if (typeof text !== 'string' || text.indexOf('<') < 0) throw new Error('Die Datei ist keine GPX-Datei.');
+    let pts = pickPoints(text, 'trkpt');
+    if (pts.length < 2) pts = pickPoints(text, 'rtept');
+    if (pts.length < 2) throw new Error('In der GPX-Datei wurden keine Track- oder Routenpunkte gefunden.');
+    const withEle = pts.filter(p => isFinite(p.ele)).length;
+    if (withEle < pts.length * 0.5) {
+      throw new Error('Die GPX-Datei enthält keine (ausreichenden) Höhendaten. Exportiere die Strecke mit Höhenangaben, z. B. aus Komoot, bikerouter.de oder Strava.');
+    }
+    // Lücken in der Höhe linear auffüllen
+    let last = -1;
+    for (let i = 0; i < pts.length; i++) {
+      if (isFinite(pts[i].ele)) {
+        if (last < i - 1) {
+          for (let k = last + 1; k < i; k++) {
+            pts[k].ele = last < 0 ? pts[i].ele : pts[last].ele + (pts[i].ele - pts[last].ele) * (k - last) / (i - last);
+          }
+        }
+        last = i;
+      }
+    }
+    for (let k = last + 1; k < pts.length; k++) pts[k].ele = pts[last].ele;
+    let name = '';
+    const trk = text.match(/<trk\b[\s\S]*?<name>([\s\S]*?)<\/name>/i);
+    const meta = text.match(/<metadata\b[\s\S]*?<name>([\s\S]*?)<\/name>/i);
+    const any = text.match(/<name>([\s\S]*?)<\/name>/i);
+    name = decodeEntities((trk && trk[1]) || (meta && meta[1]) || (any && any[1]) || '');
+    return { name: name || 'Strecke', pts };
+  }
+
+  /* -------------------------------------------------------- Geometrie */
+  const rad = d => d * Math.PI / 180;
+  function haversine(a, b) {
+    const dLat = rad(b.lat - a.lat), dLon = rad(b.lon - a.lon);
+    const s = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R_EARTH * Math.asin(Math.min(1, Math.sqrt(s)));
+  }
+  function bearingDeg(a, b) {
+    const y = Math.sin(rad(b.lon - a.lon)) * Math.cos(rad(b.lat));
+    const x = Math.cos(rad(a.lat)) * Math.sin(rad(b.lat)) - Math.sin(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.cos(rad(b.lon - a.lon));
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  }
+
+  function gaussSmooth(arr, sigmaSteps) {
+    const n = arr.length, r = Math.max(1, Math.ceil(sigmaSteps * 3));
+    const w = [];
+    for (let k = -r; k <= r; k++) w.push(Math.exp(-(k * k) / (2 * sigmaSteps * sigmaSteps)));
+    const out = new Float64Array(n);
+    for (let i = 0; i < n; i++) {
+      let s = 0, ws = 0;
+      for (let k = -r; k <= r; k++) {
+        const j = i + k;
+        if (j < 0 || j >= n) continue;
+        s += arr[j] * w[k + r]; ws += w[k + r];
+      }
+      out[i] = s / ws;
+    }
+    return out;
+  }
+
+  // Douglas-Peucker (iterativ) auf Höhenprofil (x = Distanz, y = Höhe)
+  function douglasPeucker(x, y, tol) {
+    const n = x.length, keep = new Uint8Array(n);
+    keep[0] = 1; keep[n - 1] = 1;
+    const stack = [[0, n - 1]];
+    while (stack.length) {
+      const [a, b] = stack.pop();
+      if (b - a < 2) continue;
+      const dx = x[b] - x[a], dy = y[b] - y[a];
+      let maxD = -1, idx = -1;
+      for (let i = a + 1; i < b; i++) {
+        const yi = y[a] + dy * (x[i] - x[a]) / dx;
+        const d = Math.abs(y[i] - yi);
+        if (d > maxD) { maxD = d; idx = i; }
+      }
+      if (maxD > tol) { keep[idx] = 1; stack.push([a, idx], [idx, b]); }
+    }
+    const out = [];
+    for (let i = 0; i < n; i++) if (keep[i]) out.push(i);
+    return out;
+  }
+
+  /* ---------------------------------------------- Strecke aufbereiten */
+  function buildRoute(parsed) {
+    const raw = parsed.pts;
+    // kumulierte Distanz, Duplikate entfernen
+    const pts = [raw[0]], cum = [0];
+    for (let i = 1; i < raw.length; i++) {
+      const d = haversine(pts[pts.length - 1], raw[i]);
+      if (d < 0.5) continue;
+      pts.push(raw[i]); cum.push(cum[cum.length - 1] + d);
+    }
+    const D = cum[cum.length - 1];
+    if (D < 500) throw new Error('Die Strecke ist kürzer als 500 m.');
+    // gleichmäßig neu abtasten
+    const n = Math.floor(D / STEP) + 1;
+    const xs = [];
+    for (let i = 0; i < n; i++) xs.push(i * STEP);
+    if (D - xs[xs.length - 1] > 1) xs.push(D);
+    const N = xs.length;
+    const x = new Float64Array(N), lat = new Float64Array(N), lon = new Float64Array(N), eleRaw = new Float64Array(N);
+    let j = 0;
+    for (let i = 0; i < N; i++) {
+      const xi = xs[i];
+      while (j < cum.length - 2 && cum[j + 1] < xi) j++;
+      const seg = cum[j + 1] - cum[j] || 1;
+      const f = Math.min(1, Math.max(0, (xi - cum[j]) / seg));
+      x[i] = xi;
+      lat[i] = pts[j].lat + (pts[j + 1].lat - pts[j].lat) * f;
+      lon[i] = pts[j].lon + (pts[j + 1].lon - pts[j].lon) * f;
+      eleRaw[i] = pts[j].ele + (pts[j + 1].ele - pts[j].ele) * f;
+    }
+    // Glättung (σ = 40 m) gegen GPS-/Höhenmodell-Rauschen
+    const ele = gaussSmooth(eleRaw, 40 / STEP);
+    // stückweise lineares Modellprofil (Douglas-Peucker, Toleranz 4 m)
+    const kp = douglasPeucker(x, ele, 4);
+    const grade = new Float64Array(N - 1);   // Steigung je Schritt
+    const eleM = new Float64Array(N);        // Modellhöhe
+    for (let s = 0; s < kp.length - 1; s++) {
+      const a = kp[s], b = kp[s + 1];
+      const g = (ele[b] - ele[a]) / (x[b] - x[a]);
+      for (let i = a; i < b; i++) grade[i] = g;
+      for (let i = a; i <= b; i++) eleM[i] = ele[a] + g * (x[i] - x[a]);
+    }
+    // lokale Maximalsteigung über 200 m (für Anzeige)
+    const w = Math.max(1, Math.round(200 / STEP));
+    const grade200 = new Float64Array(N - 1);
+    for (let i = 0; i < N - 1; i++) {
+      const a = Math.max(0, i - Math.floor(w / 2)), b = Math.min(N - 1, a + w);
+      grade200[i] = (ele[b] - ele[a]) / ((x[b] - x[a]) || 1);
+    }
+    const bearing = new Float64Array(N - 1);
+    for (let i = 0; i < N - 1; i++) {
+      const a = Math.max(0, i - 5), b = Math.min(N - 1, i + 6); // ~200 m Basis
+      bearing[i] = bearingDeg({ lat: lat[a], lon: lon[a] }, { lat: lat[b], lon: lon[b] });
+    }
+    let gain = 0, loss = 0, minE = Infinity, maxE = -Infinity;
+    for (let i = 0; i < N; i++) {
+      if (i) { const d = eleM[i] - eleM[i - 1]; if (d > 0) gain += d; else loss -= d; }
+      minE = Math.min(minE, eleM[i]); maxE = Math.max(maxE, eleM[i]);
+    }
+    const route = {
+      name: parsed.name, D, N, x, lat, lon, ele: eleM, eleSmooth: ele, grade, grade200, bearing,
+      gain, loss, minEle: minE, maxEle: maxE, keypoints: kp,
+    };
+    route.sections = buildSections(route, kp);
+    return route;
+  }
+
+  function classOf(g) { return g >= 0.025 ? 'up' : (g <= -0.025 ? 'down' : 'flat'); }
+
+  function buildSections(route, kp) {
+    const { x, ele } = route;
+    let secs = [];
+    for (let s = 0; s < kp.length - 1; s++) {
+      const a = kp[s], b = kp[s + 1];
+      secs.push({ i0: a, i1: b });
+    }
+    const stat = sc => {
+      sc.len = x[sc.i1] - x[sc.i0];
+      sc.dEle = ele[sc.i1] - ele[sc.i0];
+      sc.grade = sc.dEle / (sc.len || 1);
+      let up = 0, dn = 0;
+      for (let i = sc.i0 + 1; i <= sc.i1; i++) { const d = ele[i] - ele[i - 1]; if (d > 0) up += d; else dn -= d; }
+      sc.gain = up; sc.loss = dn;
+      sc.cls = classOf(sc.grade);
+      return sc;
+    };
+    secs.forEach(stat);
+    const mergeSame = () => {
+      const out = [];
+      for (const sc of secs) {
+        const last = out[out.length - 1];
+        if (last && last.cls === sc.cls) { last.i1 = sc.i1; stat(last); } else out.push(sc);
+      }
+      secs = out;
+    };
+    mergeSame();
+    const minFlat = Math.max(1000, route.D / 120);
+    const minLen = sc => sc.cls === 'flat' ? minFlat : (sc.cls === 'up' ? 500 : 600);
+    const isProtected = sc => sc.cls === 'up' && sc.gain >= 25 && sc.len >= 200;
+    for (let guard = 0; guard < 5000; guard++) {
+      if (secs.length <= 1) break;
+      let cand = -1, best = Infinity;
+      secs.forEach((sc, i) => {
+        if (sc.len < minLen(sc) && !isProtected(sc) && sc.len < best) { best = sc.len; cand = i; }
+      });
+      if (cand < 0) break;
+      const sc = secs[cand], L = secs[cand - 1], R = secs[cand + 1];
+      let target;
+      if (!L) target = cand + 1; else if (!R) target = cand - 1;
+      else target = Math.abs(L.grade - sc.grade) <= Math.abs(R.grade - sc.grade) ? cand - 1 : cand + 1;
+      const t = secs[target];
+      t.i0 = Math.min(t.i0, sc.i0); t.i1 = Math.max(t.i1, sc.i1); stat(t);
+      secs.splice(cand, 1);
+      mergeSame();
+    }
+    // sehr lange Abschnitte teilen (bessere Steuerung, max. ~15 km)
+    const out = [];
+    for (const sc of secs) {
+      const parts = Math.ceil(sc.len / 15000);
+      if (parts <= 1) { out.push(sc); continue; }
+      const n = sc.i1 - sc.i0;
+      for (let p = 0; p < parts; p++) {
+        const a = sc.i0 + Math.round(n * p / parts), b = sc.i0 + Math.round(n * (p + 1) / parts);
+        const ns = stat({ i0: a, i1: b });
+        ns.cls = sc.cls; // Klasse des Gesamtabschnitts beibehalten
+        out.push(ns);
+      }
+    }
+    out.forEach((sc, i) => {
+      sc.idx = i;
+      let mx = -Infinity;
+      for (let k = sc.i0; k < sc.i1; k++) mx = Math.max(mx, route.grade200[k]);
+      sc.maxGrade = mx;
+    });
+    return out;
+  }
+
+  /* ---------------------------------------------------------- Physik */
+  function airDensity(eleM, tempC) {
+    const p = 101325 * Math.pow(1 - 2.25577e-5 * eleM, 5.25588); // Standardatmosphäre
+    return p / (R_AIR * (tempC + 273.15));
+  }
+
+  // Widerstandskraft bei Geschwindigkeit v (m/s)
+  function force(v, c) {
+    const va = v + c.w;
+    return c.mg * (c.sin + c.crr * c.cos) + 0.5 * c.rho * c.cda * va * Math.abs(va);
+  }
+
+  // stationäre Geschwindigkeit für Leistung P (W) – Bisektion
+  function steadySpeed(P, c) {
+    const target = P * c.eta;
+    const f = v => v * force(v, c) - target;
+    let lo = 0.05, hi = 40;
+    if (f(hi) < 0) return hi;
+    if (f(lo) > 0) {
+      // nur bergab ohne Leistung möglich: Endgeschwindigkeit (F = 0)
+      if (P <= 0) {
+        let a = 0.05, b = 40;
+        if (force(a, c) > 0) return 0.05;
+        for (let k = 0; k < 50; k++) { const m = (a + b) / 2; if (force(m, c) > 0) b = m; else a = m; }
+        return (a + b) / 2;
+      }
+      return lo;
+    }
+    for (let k = 0; k < 45; k++) {
+      const m = (lo + hi) / 2;
+      if (f(m) > 0) hi = m; else lo = m;
+    }
+    return (lo + hi) / 2;
+  }
+
+  function stepCtx(route, i, p) {
+    const g = route.grade[i];
+    const th = Math.atan(g);
+    const eleMid = (route.ele[i] + route.ele[i + 1]) / 2;
+    let w = 0;
+    if (p.windSpeed > 0) w = p.windSpeed / 3.6 * Math.cos(rad(p.windFrom - route.bearing[i]));
+    return {
+      mg: p.mass * G, sin: Math.sin(th), cos: Math.cos(th), crr: p.crr, cda: p.cda,
+      rho: airDensity(eleMid, p.temp), eta: p.eta, w,
+      ds: route.x[i + 1] - route.x[i],
+    };
+  }
+
+  // stationäre Auswertung eines Schritts inkl. Bremsen/Spin-out
+  function steadyStep(P, c, p) {
+    const vmax = p.vmaxDown / 3.6, vspin = p.vSpin;
+    let v = steadySpeed(P, c), pe = P;
+    if (v > vspin) {
+      const v0 = steadySpeed(0, c);
+      if (v0 >= vspin) { v = v0; pe = 0; } else { v = vspin; pe = vspin * force(vspin, c) / c.eta; }
+    }
+    if (v > vmax) { v = vmax; pe = Math.max(0, vmax * force(vmax, c) / c.eta); if (pe < 1) pe = 0; }
+    return { v, pe };
+  }
+
+  /* ------------------------------------------- Übersetzung & Kadenz */
+  function gearList(p) {
+    const fr = p.chainrings.slice().sort((a, b) => b - a);
+    const cogs = p.cogs.slice().sort((a, b) => a - b);
+    const list = [];
+    fr.forEach((f, fi) => cogs.forEach((r, ri) => {
+      // extreme Schräglauf-Kombinationen vermeiden
+      if (fr.length > 1 && fi === 0 && ri >= cogs.length - 2) return;
+      if (fr.length > 1 && fi === fr.length - 1 && ri <= 1) return;
+      list.push({ f, r, ratio: f / r });
+    }));
+    return list;
+  }
+  function cadenceAt(v, ratio, circ) { return v / (ratio * circ) * 60; }
+  function bestGear(v, cTarget, gears, circ) {
+    let best = null;
+    for (const g of gears) {
+      const c = cadenceAt(v, g.ratio, circ);
+      const d = Math.abs(c - cTarget);
+      if (!best || d < best.d - 0.5) best = { f: g.f, r: g.r, cad: c, d };
+    }
+    return best;
+  }
+  function lowestGear(gears) { return gears.reduce((a, b) => (b.ratio < a.ratio ? b : a)); }
+  function highestGear(gears) { return gears.reduce((a, b) => (b.ratio > a.ratio ? b : a)); }
+
+  /* --------------------------------------------------- Simulation */
+  function simulate(route, powers, p) {
+    const N = route.N, secOf = route.secOfStep;
+    const v = new Float64Array(N), t = new Float64Array(N), pe = new Float64Array(N - 1), dts = new Float64Array(N - 1);
+    const meff = p.mass + 1.4; // + rotierende Laufradmasse (I/r², Größenordnung nach Martin et al. 1998)
+    const vmax = p.vmaxDown / 3.6, vspin = p.vSpin;
+    // Start mit stationärer Geschwindigkeit des ersten Schritts
+    const c0 = stepCtx(route, 0, p);
+    v[0] = Math.max(1.5, steadyStep(powers[secOf[0]], c0, p).v);
+    for (let i = 0; i < N - 1; i++) {
+      const c = stepCtx(route, i, p);
+      let P = powers[secOf[i]];
+      if (v[i] >= vspin) P = 0;               // über Spin-out-Geschwindigkeit: rollen
+      const vin = v[i], ds = c.ds;
+      const gfun = vo => {
+        const vb = (vin + vo) / 2;
+        return 0.5 * meff * (vo * vo - vin * vin) - P * c.eta * ds / vb + force(vb, c) * ds;
+      };
+      let lo = 0.3, hi = 40, vo;
+      if (gfun(lo) > 0) vo = lo;
+      else if (gfun(hi) < 0) vo = hi;
+      else {
+        for (let k = 0; k < 40; k++) { const m = (lo + hi) / 2; if (gfun(m) > 0) hi = m; else lo = m; }
+        vo = (lo + hi) / 2;
+      }
+      if (vo > vmax) vo = vmax;                // Bremsen auf Höchstgeschwindigkeit
+      if (vo < 0.8) vo = 0.8;
+      const vb = (vin + vo) / 2;
+      const dt = ds / vb;
+      // tatsächlich nötige Leistung, wenn gebremst wurde
+      if (vo >= vmax - 1e-6 && P > 0) {
+        const need = (0.5 * meff * (vo * vo - vin * vin) + force(vb, c) * ds) / (c.eta * dt);
+        P = Math.max(0, Math.min(P, need));
+      }
+      v[i + 1] = vo; pe[i] = P; dts[i] = dt; t[i + 1] = t[i] + dt;
+    }
+    return { v, t, pe, dts, T: t[N - 1] };
+  }
+
+  // 1-Sekunden-Reihe aus Schrittleistungen (Energie-erhaltend)
+  function perSecond(sim) {
+    const T = Math.ceil(sim.T);
+    const out = new Float64Array(T);
+    let tCur = 0;
+    for (let i = 0; i < sim.pe.length; i++) {
+      let dt = sim.dts[i], P = sim.pe[i];
+      while (dt > 1e-9) {
+        const sec = Math.floor(tCur);
+        if (sec >= T) break;
+        const room = Math.min(dt, sec + 1 - tCur);
+        out[sec] += P * room;
+        tCur += room; dt -= room;
+      }
+    }
+    return out;
+  }
+
+  function normalizedPower(p1) {
+    if (p1.length < 30) { let s = 0; for (const x of p1) s += x; return s / Math.max(1, p1.length); }
+    let s30 = 0, acc = 0, n = 0;
+    for (let i = 0; i < p1.length; i++) {
+      s30 += p1[i];
+      if (i >= 30) s30 -= p1[i - 30];
+      if (i >= 29) { const a = s30 / 30; acc += a * a * a * a; n++; }
+    }
+    return Math.pow(acc / n, 0.25);
+  }
+
+  // W'-Bilanz, Differentialform nach Skiba et al. (2015)
+  function wbalSeries(p1, cp, w0) {
+    const out = new Float64Array(p1.length);
+    let w = w0;
+    for (let i = 0; i < p1.length; i++) {
+      const P = p1[i];
+      if (P > cp) w -= (P - cp);
+      else w = w0 - (w0 - w) * Math.exp(-(cp - P) / w0);
+      out[i] = w;
+    }
+    return out;
+  }
+
+  // Leistungszonen nach Coggan (in % FTP, obere Grenzen)
+  const ZONES = [
+    { z: 1, name: 'Z1 Regeneration', hi: 0.55 },
+    { z: 2, name: 'Z2 Grundlage', hi: 0.75 },
+    { z: 3, name: 'Z3 Tempo', hi: 0.90 },
+    { z: 4, name: 'Z4 Schwelle', hi: 1.05 },
+    { z: 5, name: 'Z5 VO2max', hi: 1.20 },
+    { z: 6, name: 'Z6 Anaerob', hi: 1.50 },
+    { z: 7, name: 'Z7 Neuromuskulär', hi: Infinity },
+  ];
+  function zoneOf(P, ftp) { const r = P / ftp; for (const z of ZONES) if (r <= z.hi) return z.z; return 7; }
+
+  /* ---------------------------------------------- Pacing-Optimierung */
+  function sectionTime(route, sc, P, p, ctxCache) {
+    let t = 0;
+    for (let i = sc.i0; i < sc.i1; i++) {
+      const c = ctxCache[i];
+      t += c.ds / steadyStep(P, c, p).v;
+    }
+    return t;
+  }
+
+  // Zeit-Elastizität ε = −(P/t)·dt/dP  (1 = Zeit ∝ 1/P, z. B. steiler Anstieg)
+  function elasticity(route, sc, P, p, ctxCache) {
+    const h = 0.03;
+    const t1 = sectionTime(route, sc, P * (1 + h), p, ctxCache);
+    const t0 = sectionTime(route, sc, P * (1 - h), p, ctxCache);
+    const e = -(Math.log(t1) - Math.log(t0)) / (Math.log(1 + h) - Math.log(1 - h));
+    return Math.max(0, Math.min(1, e));
+  }
+
+  /* ------------------------------------------------- Hauptfunktion */
+  const DEFAULTS = {
+    // Fahrer
+    riderKg: 75, bikeKg: 8.5, extraKg: 2, ftp: 250, cp: null, wprime: null, wReserve: 0.25,
+    // Aerodynamik & Rollen
+    cda: 0.32, crr: 0.004, eta: 0.976,
+    // Setup
+    chainrings: [52, 36], cogs: [11, 12, 13, 14, 15, 17, 19, 21, 24, 27, 30, 34], tireMm: 28, circMm: null,
+    cadFlat: 90, cadClimb: 75, cadMax: 115,
+    // Umgebung
+    temp: 18, windSpeed: 0, windFrom: 270,
+    // Taktik
+    type: 'granfondo', ifTarget: 0.80, variability: 0.10, vmaxDown: 60,
+    startTime: '09:00', carbGph: null, fuelEveryMin: 20,
+  };
+
+  const TYPE_INFO = {
+    training: { label: 'Training / Vereinstour', ifDefault: 0.75 },
+    granfondo: { label: 'Radmarathon / Granfondo', ifDefault: 0.80 },
+    tt: { label: 'Zeitfahren / Bergzeitfahren', ifDefault: 1.00 },
+  };
+
+  // Vorschlag IF innerhalb der Coggan-Bereiche (TrainingPeaks/Coggan)
+  function suggestIF(type, durationS) {
+    if (type === 'tt') {
+      if (durationS <= 30 * 60) return 1.08;     // „kürzere ZF (z. B. 15 km)“ 1,05–1,15
+      if (durationS <= 75 * 60) return 1.00;     // „längere ZF (z. B. 40 km)“ 0,95–1,05
+      return 0.95;
+    }
+    if (type === 'training') return 0.75;        // Grundlagenfahrten 0,75–0,85
+    return 0.80;
+  }
+
+  function carbRecommendation(durationS) {
+    const h = durationS / 3600;
+    if (h < 0.5) return { gph: 0, text: 'unter 30 min: keine Kohlenhydratzufuhr nötig' };
+    if (h < 1.25) return { gph: 0, text: '30–75 min: kleine Mengen oder Mundspülung mit Kohlenhydraten' };
+    if (h < 2) return { gph: 30, text: '1–2 h: bis 30 g/h' };
+    if (h < 2.5) return { gph: 60, text: '2–3 h: bis 60 g/h' };
+    return { gph: 90, text: 'über 2,5 h: bis 90 g/h (Glukose-Fruktose-Mischung)' };
+  }
+
+  function plan(route, userParams) {
+    const p = Object.assign({}, DEFAULTS, userParams || {});
+    p.mass = p.riderKg + p.bikeKg + p.extraKg;
+    p.circ = (p.circMm || Math.PI * (622 + 2 * p.tireMm)) / 1000;
+    const gears = gearList(p);
+    const top = highestGear(gears);
+    p.vSpin = p.cadMax / 60 * top.ratio * p.circ;
+    const notes = [];
+    const cp = p.cp || p.ftp;
+    const hasW = !!(p.wprime && p.wprime > 0);
+    if (hasW && !p.cp) notes.push('CP nicht angegeben – für die W\'-Bilanz wird CP = FTP angenommen.');
+
+    // Zuordnung Schritt → Abschnitt
+    const secs = route.sections;
+    const secOf = new Int32Array(route.N);
+    secs.forEach(sc => { for (let i = sc.i0; i < sc.i1; i++) secOf[i] = sc.idx; });
+    secOf[route.N - 1] = secs[secs.length - 1].idx;
+    route.secOfStep = secOf;
+    const ctx = [];
+    for (let i = 0; i < route.N - 1; i++) ctx.push(stepCtx(route, i, p));
+
+    let ifT = p.ifTarget, V = p.variability;
+    const adjust = [];
+
+    const shapeFor = (Pref, Vcap) => {
+      // Elastizität je Abschnitt bei Referenzleistung
+      const eps = secs.map((sc, k) => elasticity(route, sc, Pref[k], p, ctx));
+      // Optimum der zeitminimalen Verteilung bei fester NP: P ∝ (ε/(4−ε))^(1/4)
+      const r = eps.map(e => Math.pow(e / (4 - e), 0.25));
+      const tw = secs.map((sc, k) => sectionTime(route, sc, Pref[k], p, ctx));
+      const T = tw.reduce((a, b) => a + b, 0);
+      const rbar = r.reduce((a, x, k) => a + x * tw[k], 0) / T;
+      const rho = r.map(x => x / (rbar || 1));
+      const maxUp = Math.max(...rho) - 1;
+      const s = maxUp > 0 ? Math.min(1, Vcap / maxUp) : 0;
+      return { eps, rho: rho.map(x => Math.max(0, 1 + s * (x - 1))), s };
+    };
+
+    let result = null;
+    for (let outer = 0; outer < 60; outer++) {
+      const npT = ifT * p.ftp;
+      // zwei Durchgänge: Form bei konstanter Leistung, dann bei geplanter Leistung
+      let Pref = secs.map(() => npT);
+      let shape = shapeFor(Pref, V);
+      Pref = shape.rho.map(x => Math.max(20, x * npT));
+      shape = shapeFor(Pref, V);
+      // Grundwert B so bestimmen, dass simulierte NP = Ziel-NP
+      let B = npT, sim, p1, np;
+      for (let it = 0; it < 8; it++) {
+        const powers = shape.rho.map(x => x * B);
+        sim = simulate(route, powers, p);
+        p1 = perSecond(sim);
+        np = normalizedPower(p1);
+        if (Math.abs(np - npT) < 0.3) break;
+        B *= npT / np;
+      }
+      const powers = shape.rho.map(x => x * B);
+      let wb = null, wmin = null;
+      if (hasW) {
+        wb = wbalSeries(p1, cp, p.wprime);
+        wmin = Math.min(...wb);
+        if (wmin < p.wReserve * p.wprime && (V > 0.0001 || ifT > 0.5)) {
+          if (V > 0.0001) { V = Math.max(0, V - 0.01); }
+          else { ifT = Math.round((ifT - 0.01) * 100) / 100; }
+          continue;
+        }
+      }
+      result = { powers, shape, sim, p1, np, wb, wmin, B };
+      break;
+    }
+    if (!result) throw new Error('Keine gültige Strategie gefunden.');
+    if (Math.abs(V - p.variability) > 1e-6) adjust.push(`Pacing-Spanne von ${Math.round(p.variability * 100)} % auf ${Math.round(V * 100)} % reduziert, damit die W'-Reserve nicht unterschritten wird.`);
+    if (Math.abs(ifT - p.ifTarget) > 1e-6) adjust.push(`Ziel-IF von ${p.ifTarget.toFixed(2).replace('.', ',')} auf ${ifT.toFixed(2).replace('.', ',')} gesenkt, damit die W'-Reserve nicht unterschritten wird.`);
+
+    const { sim, p1, powers } = result;
+    const T = sim.T;
+    // Kennzahlen
+    let work = 0; for (const x of p1) work += x;
+    const avgP = work / p1.length;
+    const NP = result.np, IF = NP / p.ftp;
+    const TSS = (T * NP * IF) / (p.ftp * 3600) * 100;
+    const zoneT = ZONES.map(() => 0);
+    for (const x of p1) zoneT[zoneOf(x, p.ftp) - 1] += 1;
+    let coastT = 0; for (const x of p1) if (x < 1) coastT++;
+
+    // Abschnittsdaten
+    const startMin = (() => { const m = String(p.startTime || '09:00').match(/(\d{1,2}):(\d{2})/); return m ? (+m[1]) * 60 + (+m[2]) : 540; })();
+    const lowG = lowestGear(gears);
+    const sections = secs.map((sc, k) => {
+      const i0 = sc.i0, i1 = sc.i1;
+      const t0 = sim.t[i0], t1 = sim.t[i1];
+      let pedT = 0, pedW = 0, vPedSum = 0, vMin = Infinity, en = 0;
+      for (let i = i0; i < i1; i++) {
+        en += sim.pe[i] * sim.dts[i];
+        if (sim.pe[i] > 1) { pedT += sim.dts[i]; vPedSum += (sim.v[i] + sim.v[i + 1]) / 2 * sim.dts[i]; }
+        vMin = Math.min(vMin, sim.v[i + 1]);
+      }
+      const dur = t1 - t0;
+      const coasting = (en / Math.max(1, dur)) < 0.5 * powers[k] || pedT < 0.35 * dur;
+      const vPed = pedT > 0 ? vPedSum / pedT : (sc.len / dur);
+      const gClamp = Math.max(0, Math.min(0.08, sc.grade));
+      const cTarget = p.cadFlat + (p.cadClimb - p.cadFlat) * (gClamp / 0.08);
+      const gear = coasting ? null : bestGear(vPed, cTarget, gears, p.circ);
+      let steepWarn = null;
+      if (sc.cls === 'up') {
+        const cLow = cadenceAt(vMin, lowG.ratio, p.circ);
+        if (cLow < p.cadClimb - 5) steepWarn = { cad: cLow, gear: lowG };
+      }
+      const P = powers[k];
+      const avgSecP = en / Math.max(1, dur);
+      return {
+        idx: k, cls: sc.cls, i0, i1,
+        kmStart: route.x[i0] / 1000, kmEnd: route.x[i1] / 1000, len: sc.len,
+        gain: sc.gain, loss: sc.loss, grade: sc.grade, maxGrade: sc.maxGrade,
+        eleStart: route.ele[i0], eleEnd: route.ele[i1],
+        target: Math.round(P), targetPct: P / p.ftp, zone: zoneOf(P, p.ftp),
+        avgP: avgSecP, eps: result.shape.eps[k],
+        coasting, dur, speed: sc.len / dur * 3.6, vMinKmh: vMin * 3.6,
+        cadTarget: cTarget, gear, steepWarn,
+        clock: startMin + t0 / 60,
+      };
+    });
+
+    // Anstiege (für Tabelle & Zettel)
+    const climbs = sections.filter(s => s.cls === 'up' && s.gain >= 20).map((s, n) => Object.assign({ no: n + 1 }, s));
+    sections.forEach(s => { const c = climbs.find(c => c.idx === s.idx); if (c) s.climbNo = c.no; });
+
+    // Verpflegung
+    const rec = carbRecommendation(T);
+    const gph = (p.carbGph === null || p.carbGph === undefined || p.carbGph === '') ? rec.gph : +p.carbGph;
+    const markers = [];
+    if (gph > 0 && p.fuelEveryMin > 0) {
+      const every = p.fuelEveryMin * 60;
+      let k = 1, i = 0;
+      while (k * every < T - 300) {
+        while (i < route.N - 1 && sim.t[i + 1] < k * every) i++;
+        markers.push({ t: k * every, km: route.x[i] / 1000, grams: Math.round(gph * p.fuelEveryMin / 60), clock: startMin + k * every / 60 });
+        k++;
+      }
+    }
+
+    // W'-Bilanz pro Schritt (für Diagramm)
+    let wStep = null;
+    if (result.wb) {
+      wStep = new Float64Array(route.N);
+      for (let i = 0; i < route.N; i++) wStep[i] = result.wb[Math.min(result.wb.length - 1, Math.floor(sim.t[i]))];
+    }
+
+    // Vergleich: konstante Leistung bei gleicher NP (Modellrechnung)
+    let Tconst = null;
+    if (!p.fast) {
+      let B = NP, simC;
+      for (let it = 0; it < 8; it++) {
+        simC = simulate(route, secs.map(() => B), p);
+        const npc = normalizedPower(perSecond(simC));
+        if (Math.abs(npc - NP) < 0.3) break;
+        B *= NP / npc;
+      }
+      Tconst = simC.T;
+    }
+
+    // Hinweise
+    if (p.type === 'tt' && T > 75 * 60 && IF >= 1.0) notes.push('Ziel-IF ≥ 1,0 bei über 75 min Fahrzeit: Die FTP ist als Leistung definiert, die etwa eine Stunde gehalten werden kann.');
+    if (p.type === 'granfondo') notes.push('Die Leistungen gelten für Solofahrt. Im Windschatten einer Gruppe sinkt die nötige Leistung im Flachen deutlich – die Vorgaben für die Anstiege bleiben die wichtigste Orientierung.');
+    if (!hasW) notes.push('Ohne W\' kann keine W\'-Bilanz berechnet werden. Bestimme W\' im Profil mit dem W\'-Rechner.');
+    const steep = sections.filter(s => s.steepWarn);
+    if (steep.length) notes.push(`An ${steep.length} Anstieg(en) liegt die Trittfrequenz im kleinsten Gang (${lowG.f}×${lowG.r}) an der steilsten Stelle unter deinem Wunschwert.`);
+
+    return {
+      params: p, gears, route, sections, climbs,
+      sim, p1, wStep,
+      summary: {
+        T, D: route.D, gain: route.gain, loss: route.loss, avgSpeed: route.D / T * 3.6,
+        avgP, NP, IF, TSS, kJ: work / 1000, VI: NP / avgP, coastPct: coastT / p1.length,
+        ifTarget: ifT, variability: V, wmin: result.wmin, startMin, endMin: startMin + T / 60, Tconst,
+      },
+      zones: ZONES.map((z, i) => ({ z: z.z, name: z.name, s: zoneT[i] })),
+      fuel: { gph, rec, markers, total: Math.round(gph * T / 3600), every: p.fuelEveryMin },
+      adjust, notes,
+    };
+  }
+
+  /* ------------------------------------------------- Strategietext */
+  function fmtDur(sec) {
+    const m = Math.round(sec / 60), h = Math.floor(m / 60);
+    return h > 0 ? `${h}:${String(m % 60).padStart(2, '0')} h` : `${m} min`;
+  }
+  const n0 = x => Math.round(x).toLocaleString('de-DE');
+  const n1 = x => (Math.round(x * 10) / 10).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+
+  function strategy(r) {
+    const s = r.summary, p = r.params, out = [];
+    const ped = r.sections.filter(x => !x.coasting);
+    const tw = (arr, f) => { let a = 0, t = 0; arr.forEach(x => { a += f(x) * x.dur; t += x.dur; }); return t ? a / t : 0; };
+    const up = ped.filter(x => x.cls === 'up'), fl = ped.filter(x => x.cls === 'flat'), dn = r.sections.filter(x => x.cls === 'down');
+    out.push({ k: 'Gesamt', t: `Ziel-Belastung NP ${n0(s.NP)} W (IF ${s.IF.toFixed(2).replace('.', ',')}). Geschätzte Fahrzeit ${fmtDur(s.T)} bei Ø ${n1(s.avgSpeed)} km/h und Ø ${n0(s.avgP)} W.` });
+    if (up.length && fl.length) {
+      out.push({ k: 'Verteilung', t: `Anstiege mit Ø ${n0(tw(up, x => x.target))} W (${n0(tw(up, x => x.targetPct) * 100)} % FTP), Flachstücke mit Ø ${n0(tw(fl, x => x.target))} W (${n0(tw(fl, x => x.targetPct) * 100)} % FTP). Mehr Leistung dort, wo du langsam bist – dort bringt jedes zusätzliche Watt den größten Zeitgewinn.` });
+    }
+    if (s.Tconst && s.Tconst - s.T > 20) {
+      out.push({ k: 'Zeitvorteil', t: `Gegenüber konstanter Leistung mit gleicher NP spart diese Verteilung laut Modell etwa ${fmtDur(s.Tconst - s.T)}.` });
+    }
+    const roll = dn.filter(x => x.coasting);
+    if (roll.length) out.push({ k: 'Abfahrten', t: `${roll.length} Abfahrt(en) rollen lassen (aerodynamische Haltung); Treten bringt dort kaum Zeit, weil du schon nahe der Spin-out- bzw. deiner Höchstgeschwindigkeit fährst.` });
+    if (r.climbs.length) {
+      const key = r.climbs.slice().sort((a, b) => b.gain - a.gain)[0];
+      out.push({ k: 'Schlüsselanstieg', t: `Anstieg ${key.no} ab km ${n1(key.kmStart)}: ${n1(key.len / 1000)} km, ${n0(key.gain)} Hm, Ø ${n1(key.grade * 100)} % (max. ${n1(key.maxGrade * 100)} %) – ${key.target} W, ca. ${fmtDur(key.dur)}${key.gear ? `, ${key.gear.f}×${key.gear.r} bei ~${n0(key.gear.cad)} U/min` : ''}.` });
+    }
+    if (s.wmin !== null && s.wmin !== undefined) {
+      out.push({ k: "W'-Bilanz", t: `Tiefster Stand ${n1(s.wmin / 1000)} kJ von ${n1(p.wprime / 1000)} kJ (${n0(s.wmin / p.wprime * 100)} %). Reserve-Grenze: ${n0(p.wReserve * 100)} %.` });
+    }
+    if (r.fuel.gph > 0 && r.fuel.markers.length) {
+      out.push({ k: 'Verpflegung', t: `${r.fuel.gph} g Kohlenhydrate pro Stunde: alle ${r.fuel.every} min ca. ${r.fuel.markers[0].grams} g, erstmals bei km ${n1(r.fuel.markers[0].km)}. Gesamt ca. ${n0(r.fuel.total)} g. Mengen über 60 g/h nur mit Glukose-Fruktose-Produkten und vorher im Training erprobt.` });
+    } else if (r.fuel.rec) {
+      out.push({ k: 'Verpflegung', t: `Für diese Dauer: ${r.fuel.rec.text}.` });
+    }
+    r.sections.filter(x => x.steepWarn).forEach(x => {
+      out.push({ k: 'Übersetzung', t: `Anstieg ${x.climbNo || ''} (km ${n1(x.kmStart)}): an der steilsten Stelle (${n1(x.maxGrade * 100)} %) im kleinsten Gang ${x.steepWarn.gear.f}×${x.steepWarn.gear.r} nur ca. ${n0(x.steepWarn.cad)} U/min.` });
+    });
+    r.adjust.forEach(t => out.push({ k: 'Angepasst', t }));
+    return out;
+  }
+
+  /* ---------------------------------------------------- Hilfsrechner */
+  // CP & W' aus Bestleistungen: lineares Arbeit-Zeit-Modell (W = CP·t + W')
+  function fitCP(efforts) {
+    const e = efforts.filter(x => x && x.t > 0 && x.p > 0);
+    if (e.length < 2) return null;
+    const n = e.length;
+    const tx = e.map(x => x.t), wy = e.map(x => x.p * x.t);
+    const mx = tx.reduce((a, b) => a + b, 0) / n, my = wy.reduce((a, b) => a + b, 0) / n;
+    let sxy = 0, sxx = 0, syy = 0;
+    for (let i = 0; i < n; i++) { sxy += (tx[i] - mx) * (wy[i] - my); sxx += (tx[i] - mx) ** 2; syy += (wy[i] - my) ** 2; }
+    if (sxx <= 0) return null;
+    const cp = sxy / sxx, wp = my - cp * mx;
+    const r2 = syy > 0 ? (sxy * sxy) / (sxx * syy) : 1;
+    const warnings = [];
+    if (!e.some(x => x.t >= 600)) warnings.push('Keine Leistung ≥ 10 min dabei: CP wird dann laut Literatur eher überschätzt (Mattioni Maturana et al. 2018).');
+    if (e.some(x => x.t < 120)) warnings.push('Leistungen unter 2 min verfälschen das Modell; nutze Dauern zwischen ca. 2 und 20 min.');
+    if (wp <= 0) warnings.push('W\' ist ≤ 0 – die Werte passen nicht zum Modell (vermutlich keine echten Maximalleistungen).');
+    return { cp, wp, r2, warnings };
+  }
+
+  // CdA aus einer gleichmäßigen Fahrt auf flacher Strecke bei Windstille
+  function cdaFromRide(P, vKmh, massKg, crr, eta, eleM, tempC) {
+    const v = vKmh / 3.6, rho = airDensity(eleM, tempC);
+    return (P * eta / v - massKg * G * crr) / (0.5 * rho * v * v);
+  }
+
+  const API = {
+    parseGPX, buildRoute, plan, strategy, fmtDur, fitCP, cdaFromRide, airDensity, suggestIF, carbRecommendation,
+    gearList, cadenceAt, ZONES, zoneOf, DEFAULTS, TYPE_INFO, STEP,
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.Engine = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* =========================================================================
+   Radsport-Planer – PDF-Bericht und Vorbau-/Lenker-Zettel
+   Zeichnet über eine "Painter"-Schnittstelle (PDF-Seite oder Canvas-Vorschau)
+   ========================================================================= */
+(function (root) {
+  'use strict';
+  const PL = root.PDFLite || (typeof require !== 'undefined' ? require('./pdf.js') : null);
+  const E = root.Engine || (typeof require !== 'undefined' ? require('./engine.js') : null);
+
+  // Druckfarben (helles Papier)
+  const C = {
+    ink: '#14212a', ink2: '#45555f', muted: '#7d8b93', grid: '#dce4e7', line: '#c4cfd4',
+    panel: '#f2f6f7', accent: '#0e6f68', accentSoft: '#d7ece9', roll: '#c9d3d8', white: '#ffffff',
+    zones: ['#e68a58', '#dd6d28', '#cf5200', '#b93d00', '#a02c00', '#842100', '#661b00'],
+  };
+
+  const nf = (x, d) => (x === null || x === undefined || !isFinite(x)) ? '–' :
+    Number(x).toLocaleString('de-DE', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  const clock = m => { m = Math.round(m) % (24 * 60); return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+  const dur = s => E.fmtDur(s);
+  const clsLabel = { up: 'Anstieg', down: 'Abfahrt', flat: 'Flach/wellig' };
+
+  /* ------------------------------------------------ Zettel-Zeilen */
+  // Alle Abschnitte; benachbarte Nicht-Anstiege mit ähnlicher Leistung werden zusammengefasst
+  function stickerRows(r) {
+    const rows = [];
+    for (const s of r.sections) {
+      const row = {
+        key: s.idx, secs: [s.idx],
+        kmStart: s.kmStart, kmEnd: s.kmEnd, len: s.len, gain: s.gain, cls: s.cls, roll: s.coasting,
+        target: s.target, dur: s.dur, grade: s.grade, maxGrade: s.maxGrade, gear: s.gear, climbNo: s.climbNo,
+        zone: s.zone, eleStart: s.eleStart, eleEnd: s.eleEnd, eps: s.eps,
+      };
+      const last = rows[rows.length - 1];
+      const mergeable = last && row.cls !== 'up' && last.cls !== 'up' && last.roll === row.roll &&
+        (row.roll || Math.abs(last.target - row.target) <= 8);
+      if (mergeable) {
+        const T = last.dur + row.dur;
+        last.target = Math.round((last.target * last.dur + row.target * row.dur) / T);
+        last.eps = (last.eps * last.dur + row.eps * row.dur) / T;
+        last.dur = T; last.kmEnd = row.kmEnd; last.len += row.len; last.gain += row.gain;
+        last.eleEnd = row.eleEnd; last.grade = (last.eleEnd - last.eleStart) / last.len;
+        last.maxGrade = Math.max(last.maxGrade, row.maxGrade);
+        last.secs.push(s.idx);
+        if (!last.gear || (row.gear && row.dur > last.dur / 2)) last.gear = row.gear || last.gear;
+        if (last.cls !== row.cls) last.cls = Math.abs(last.grade) < 0.025 ? 'flat' : (last.grade > 0 ? 'up' : 'down');
+        last.zone = E.zoneOf(last.target, r.params.ftp);
+      } else rows.push(row);
+    }
+    return rows;
+  }
+
+  const STICKER_DEFAULTS = { mode: 'all', minGain: 30, lines: 2, round5: false, profile: true, picks: null };
+  const roundW = (x, o) => (o && o.round5) ? Math.round(x / 5) * 5 : Math.round(x);
+  function twMean(arr) { let a = 0, t = 0; arr.forEach(x => { a += x.target * x.dur; t += x.dur; }); return t ? a / t : null; }
+  // Zeitwirkung eines Abschnitts: Dauer × Zeit-Elastizität (wie stark die Fahrzeit auf Leistungsänderung reagiert)
+  const timeImpact = row => row.dur * Math.max(0.05, row.eps || 0);
+
+  // Grundwerte für kompakte Zettel
+  function baseLines(rows, shown, o) {
+    const out = [];
+    const flat = rows.filter(x => x.cls === 'flat' && !x.roll);
+    const shownKeys = new Set(shown.map(x => x.key));
+    const otherUp = rows.filter(x => x.cls === 'up' && !x.roll && !shownKeys.has(x.key));
+    const down = rows.filter(x => x.cls === 'down'), downPed = down.filter(x => !x.roll);
+    if (flat.length) out.push(['Flach', `${nf(roundW(twMean(flat), o))} W`]);
+    if (otherUp.length) out.push([shown.some(x => x.cls === 'up') ? 'Andere Anstiege' : 'Anstiege', `${nf(roundW(twMean(otherUp), o))} W`]);
+    if (down.length) out.push(['Bergab', downPed.length ? `bis ${nf(roundW(Math.max(...downPed.map(x => x.target)), o))} W` : 'rollen']);
+    return out;
+  }
+
+  // Inhalt & Aufteilung des Zettels
+  function stickerLayout(r, w, h, opts) {
+    const o = Object.assign({}, STICKER_DEFAULTS, opts || {});
+    const all = stickerRows(r);
+    const fs = Math.max(6.5, Math.min(10, w / 30 * 8.5)); // Watt-Schriftgröße in pt
+    const l1h = fs * 0.353 * 1.35, l2h = fs * 0.62 * 0.353 * 1.25;
+    const rowH = o.lines === 1 ? l1h + 1.0 : l1h + l2h + 1.2; // mm
+    const headH = 8.5;
+    const profH = o.profile ? Math.min(22, Math.max(13, w * 0.5)) : 0;
+    const footH = r.fuel.markers.length ? 7.5 : 5;
+    const fsB = fs * 0.72, baseLH = fsB * 0.353 * 1.45;
+    const baseH = n => n ? n * baseLH + 2.2 : 0;
+    const capacity = n => Math.max(0, Math.floor((h - headH - profH - baseH(n) - footH - 2) / rowH));
+
+    let shown, dropped = [], parts, candidates = [];
+    if (o.mode === 'all') {
+      shown = all;
+      const per = Math.max(1, capacity(0));
+      parts = [];
+      for (let i = 0; i < shown.length; i += per) parts.push(shown.slice(i, i + per));
+    } else {
+      if (o.mode === 'custom') {
+        const set = new Set(o.picks || []);
+        candidates = all.filter(x => set.has(x.key));
+      } else {
+        const flat = all.filter(x => x.cls === 'flat' && !x.roll);
+        const base = twMean(flat);
+        candidates = all.filter(x => (x.cls === 'up' && x.gain >= o.minGain) ||
+          (x.cls !== 'up' && !x.roll && base && x.dur >= 300 && Math.abs(x.target - base) / base >= 0.05));
+      }
+      const cap = capacity(3);
+      if (o.mode === 'compact' && candidates.length > cap) {
+        const keep = new Set(candidates.slice().sort((a, b) => timeImpact(b) - timeImpact(a)).slice(0, cap).map(x => x.key));
+        shown = candidates.filter(x => keep.has(x.key));
+        dropped = candidates.filter(x => !keep.has(x.key));
+      } else shown = candidates;
+      const per = Math.max(1, cap);
+      parts = [];
+      for (let i = 0; i < shown.length; i += per) parts.push(shown.slice(i, i + per));
+      if (!parts.length) parts.push([]);
+    }
+    const bl = o.mode === 'all' ? [] : baseLines(all, shown, o);
+    const cap0 = o.mode === 'all' ? capacity(0) : capacity(3);
+    // Freien Platz für größere Schrift nutzen (bessere Lesbarkeit während der Fahrt)
+    let k = 1;
+    if (o.mode !== 'all' && o.autoFont !== false && parts.length === 1) {
+      const avail = h - headH - profH - footH - 2;
+      const n = Math.max(1, shown.length);
+      for (let t = 1.3; t > 1.001; t -= 0.02) {
+        const rH = o.lines === 1 ? (l1h * t + 1.0) : ((l1h + l2h) * t + 1.2);
+        const bH = bl.length ? bl.length * baseLH * t + 2.2 : 0;
+        if (n * rH + bH <= avail) { k = t; break; }
+      }
+    }
+    const fsK = fs * k, rowHK = o.lines === 1 ? l1h * k + 1.0 : (l1h + l2h) * k + 1.2;
+    return {
+      o, all, rows: shown, parts, dropped, candidates, fs: fsK, fs2: fs * 0.62 * Math.min(k, 1.08), fsB: fsB * k, rowH: rowHK, headH, profH, footH,
+      baseLines: bl, baseH: bl.length ? bl.length * baseLH * k + 2.2 : 0, baseLH: baseLH * k, capacity: cap0,
+      fits: parts.length === 1, fontScale: k,
+    };
+  }
+
+  // Schlüssel der kompakten Auswahl (Vorbelegung für „Eigene Auswahl“)
+  function compactKeys(r, w, h, opts) {
+    return stickerLayout(r, w, h, Object.assign({}, opts || {}, { mode: 'compact' })).rows.map(x => x.key);
+  }
+
+  function triangle(pg, x, y, s, up, color) {
+    pg.fill(color);
+    if (up) pg.poly([[x, y], [x + s, y], [x + s / 2, y - s * 0.9]], true, 'f');
+    else pg.poly([[x, y - s * 0.9], [x + s, y - s * 0.9], [x + s / 2, y]], true, 'f');
+  }
+
+  function drawProfile(pg, r, x, y, w, h, o) {
+    o = o || {};
+    const route = r.route, D = route.D;
+    const minE = route.minEle, maxE0 = Math.max(route.maxEle, minE + 30);
+    const maxE = o.headroom ? maxE0 + (maxE0 - minE) * o.headroom : maxE0;
+    const X = d => x + d / D * w, Y = e => y + h - (e - minE) / (maxE - minE) * h;
+    const step = Math.max(1, Math.floor(route.N / 400));
+    // Flächen je Abschnitt in Zonenfarbe (Rollstrecken grau)
+    for (const s of r.sections) {
+      const pts = [[X(route.x[s.i0]), y + h]];
+      for (let i = s.i0; i <= s.i1; i += step) pts.push([X(route.x[i]), Y(route.ele[i])]);
+      pts.push([X(route.x[s.i1]), Y(route.ele[s.i1])], [X(route.x[s.i1]), y + h]);
+      pg.fill(s.coasting ? C.roll : C.zones[s.zone - 1]);
+      pg.poly(pts, true, 'f');
+    }
+    // Abgrenzung des aktiven Teilstücks
+    if (o.range) {
+      pg.save().alpha(0.62).fill(C.white);
+      if (o.range[0] > 0) pg.rect(x, y - 0.5, X(o.range[0] * 1000) - x, h + 0.5);
+      if (o.range[1] * 1000 < D - 1) pg.rect(X(o.range[1] * 1000), y - 0.5, x + w - X(o.range[1] * 1000), h + 0.5);
+      pg.restore();
+    }
+    // Profillinie
+    const line = [];
+    for (let i = 0; i < route.N; i += step) line.push([X(route.x[i]), Y(route.ele[i])]);
+    line.push([X(D), Y(route.ele[route.N - 1])]);
+    pg.stroke(C.ink).lw(o.thin ? 0.2 : 0.3).lineJoin(1).poly(line, false, 'S');
+    pg.stroke(C.line).lw(0.2).line(x, y + h, x + w, y + h);
+    // Anstiegsnummern
+    if (o.climbLabels) {
+      for (const c of r.climbs) {
+        const cx = X(c.kmEnd * 1000), cy = Y(c.eleEnd) - 1.2;
+        const strong = !o.strong || o.strong.has(c.no);
+        pg.text(String(c.no), cx, Math.max(y + 1.6, cy), { size: o.climbLabels, bold: strong, align: 'center', color: strong ? C.ink : C.muted });
+      }
+    }
+    // Verpflegungspunkte
+    if (o.fuel && r.fuel.markers.length) {
+      for (const m of r.fuel.markers) { pg.fill(C.accent).circle(X(m.km * 1000), y + h + 0.9, o.fuel, 'f'); }
+    }
+    return { X, Y };
+  }
+
+  function drawSticker(pg, r, lay, partIdx, ox, oy, w, h) {
+    const o = lay.o, part = lay.parts[partIdx], nParts = lay.parts.length;
+    const pad = Math.max(1.2, w * 0.045);
+    const iw = w - 2 * pad;
+    const D = r.route.D / 1000;
+    // Rahmen
+    pg.fill(C.white).rect(ox, oy, w, h);
+    pg.stroke(C.line).lw(0.15).rect(ox, oy, w, h, 'S');
+    // Kopf
+    const titleSize = Math.max(5.5, Math.min(8, w / 30 * 6.5));
+    let ty = oy + pad + titleSize * 0.353;
+    pg.text(r.route.name, ox + pad, ty, { size: titleSize, bold: true, color: C.ink, maxW: iw - (nParts > 1 ? 7 : 0) });
+    if (nParts > 1) pg.text(`${partIdx + 1}/${nParts}`, ox + w - pad, ty, { size: titleSize, bold: true, align: 'right', color: C.accent });
+    ty += titleSize * 0.353 * 1.25;
+    const s = r.summary;
+    pg.text(`NP ${nf(s.NP)} W · FTP ${nf(r.params.ftp)} · ${dur(s.T)}`, ox + pad, ty, { size: titleSize * 0.8, color: C.ink2, maxW: iw });
+    // Bereich dieses Teils
+    const range = (nParts > 1 && part.length) ? [part[0].kmStart, part[part.length - 1].kmEnd] : [0, D];
+    // Profil
+    let y = oy + lay.headH;
+    if (o.profile) {
+      const strong = o.mode === 'all' ? null : new Set(lay.rows.filter(x => x.climbNo).map(x => x.climbNo));
+      const pp = drawProfile(pg, r, ox + pad, y, iw, lay.profH - 4.2, { range: nParts > 1 ? range : null, climbLabels: Math.max(4.5, titleSize * 0.75), fuel: 0.45, thin: true, headroom: 0.22, strong });
+      const kmY = y + lay.profH - 0.6;
+      const ks = Math.max(4.2, titleSize * 0.7);
+      pg.text('0', ox + pad, kmY, { size: ks, color: C.muted });
+      pg.text(`${nf(D / 2, 0)}`, ox + pad + iw / 2, kmY, { size: ks, color: C.muted, align: 'center' });
+      pg.text(`${nf(D, 0)} km`, ox + w - pad, kmY, { size: ks, color: C.muted, align: 'right' });
+      if (nParts > 1) pg.stroke(C.ink).lw(0.35).line(pp.X(range[0] * 1000), y + lay.profH - 3.6, pp.X(range[1] * 1000), y + lay.profH - 3.6);
+      y += lay.profH;
+    }
+    // Grundwerte
+    if (lay.baseLines.length) {
+      y += 0.6;
+      pg.fill(C.panel).rect(ox + pad, y, iw, lay.baseH - 0.6);
+      let by = y + 1 + lay.fsB * 0.353;
+      lay.baseLines.forEach(([k, v]) => {
+        const vw = pg.text(v, ox + w - pad - 1, by, { size: lay.fsB, bold: true, color: C.ink, align: 'right' });
+        pg.text(k, ox + pad + 1, by, { size: lay.fsB * 0.8, color: C.ink2, maxW: iw - vw - 3 });
+        by += lay.baseLH;
+      });
+      y += lay.baseH - 0.6;
+    }
+    // Zeilen
+    y += 0.6;
+    const fs = lay.fs, fs2 = lay.fs2 || fs * 0.62;
+    const chip = 1.1;
+    part.forEach((row, i) => {
+      if (i > 0 || lay.baseLines.length) pg.stroke(C.grid).lw(0.15).line(ox + pad, y, ox + w - pad, y);
+      const l1 = y + 0.55 + fs * 0.353 * 1.05;
+      const l2 = l1 + fs2 * 0.353 * 1.45;
+      pg.fill(row.roll ? C.roll : C.zones[row.zone - 1]).rect(ox + pad, y + 0.7, chip, lay.rowH - 1.4);
+      const tx = ox + pad + chip + 1;
+      const kmW = pg.text(nf(row.kmStart, 1), tx, l1, { size: fs * 0.82, bold: true, color: C.ink });
+      let gx = tx + kmW + 0.9;
+      const gs = fs * 0.22;
+      if (row.cls === 'up') {
+        triangle(pg, gx, l1 - 0.15, gs, true, C.ink); gx += gs + 0.4;
+        if (row.climbNo) gx += pg.text(String(row.climbNo), gx, l1, { size: fs * 0.6, bold: true, color: C.ink }) + 0.2;
+      } else if (row.cls === 'down') { triangle(pg, gx, l1 - 0.15, gs, false, C.muted); gx += gs + 0.4; }
+      // Watt
+      let wLeft;
+      if (row.roll) wLeft = ox + w - pad - pg.text('rollen', ox + w - pad, l1, { size: fs * 0.8, bold: true, color: C.muted, align: 'right' });
+      else {
+        const uw = pg.text('W', ox + w - pad, l1, { size: fs * 0.55, bold: true, color: C.ink2, align: 'right' });
+        const vw = pg.text(nf(roundW(row.target, o)), ox + w - pad - uw - 0.4, l1, { size: fs * 1.08, bold: true, color: C.ink, align: 'right' });
+        wLeft = ox + w - pad - uw - 0.4 - vw;
+      }
+      const info = row.cls === 'flat' ? `${nf(row.len / 1000, 1)} km` : `${nf(row.len / 1000, 1)} km · ${nf(row.grade * 100, 1)} %`;
+      if (o.lines === 1) {
+        // kurze Zeile: Länge zwischen km und Watt, wenn Platz ist
+        const room = wLeft - gx - 1.2;
+        const txt = row.cls === 'up' ? `${nf(row.len / 1000, 1)} km` : '';
+        if (txt && room > PL.widthOf(txt, fs2, false)) pg.text(txt, gx + 0.6, l1, { size: fs2, color: C.ink2 });
+      } else {
+        const gear = row.roll || !row.gear ? '' : `${row.gear.f}×${row.gear.r} · ${nf(row.gear.cad)}`;
+        const gw = gear ? PL.widthOf(gear, fs2, false) : 0;
+        pg.text(info, tx, l2, { size: fs2, color: C.ink2, maxW: w - pad - (tx - ox) - gw - 1.2 });
+        if (gear) pg.text(gear, ox + w - pad, l2, { size: fs2, color: C.ink2, align: 'right' });
+      }
+      y += lay.rowH;
+    });
+    // Fuß: Verpflegung
+    const fm = r.fuel.markers.filter(m => m.km >= range[0] - 0.01 && m.km <= range[1] + 0.01);
+    const fy = oy + h - pad - 0.3;
+    if (fm.length) {
+      const fsz = fs2 * 0.92, lh = fsz * 0.353 * 1.3;
+      const lines = PL.wrap(`${fm[0].grams} g KH bei km ` + fm.map(m => nf(m.km, 0)).join(' · '), iw - 1.8, fsz, false).slice(0, 2);
+      const y0 = fy - (lines.length - 1) * lh;
+      pg.fill(C.accent).circle(ox + pad + 0.6, y0 - fsz * 0.12, 0.6, 'f');
+      lines.forEach((ln, i) => pg.text(ln, ox + pad + 1.8, y0 + i * lh, { size: fsz, color: C.ink2, maxW: iw - 1.8 }));
+    } else {
+      pg.text(`Zettel ${w}×${h} mm`, ox + pad, fy, { size: fs2 * 0.85, color: C.muted });
+    }
+  }
+
+  function cropMarks(pg, x, y, w, h) {
+    const L = 3, g = 1;
+    pg.stroke(C.ink).lw(0.15);
+    [[x, y], [x + w, y], [x, y + h], [x + w, y + h]].forEach(([cx, cy], i) => {
+      const sx = i % 2 ? 1 : -1, sy = i < 2 ? -1 : 1;
+      pg.line(cx + sx * g, cy, cx + sx * (g + L), cy);
+      pg.line(cx, cy + sy * g, cx, cy + sy * (g + L));
+    });
+  }
+
+  function buildSticker(r, opts) {
+    const w = opts.w, h = opts.h;
+    const lay = stickerLayout(r, w, h, opts);
+    const doc = new PL.Doc({ title: `Zettel – ${r.route.name}` });
+    const M = 14, gap = 10;
+    const perRow = Math.max(1, Math.floor((210 - 2 * M + gap) / (w + gap)));
+    const perCol = Math.max(1, Math.floor((297 - 2 * M - 22 + gap) / (h + gap)));
+    const perPage = perRow * perCol;
+    const copies = Math.max(1, opts.copies || 1);
+    const list = [];
+    for (let c = 0; c < copies; c++) lay.parts.forEach((_, i) => list.push(i));
+    for (let p = 0; p < list.length; p += perPage) {
+      const pg = doc.addPage(210, 297);
+      pg.text('Radsport-Planer · Zettel für Vorbau/Lenker', M, M - 4, { size: 9, bold: true, color: C.ink });
+      pg.text(`${r.route.name} · Format ${w} × ${h} mm · mit 100 % (ohne Skalierung) drucken, an den Marken schneiden`, M, M + 0.5, { size: 7, color: C.ink2, maxW: 210 - 2 * M });
+      const chunk = list.slice(p, p + perPage);
+      chunk.forEach((partIdx, k) => {
+        const cx = M + (k % perRow) * (w + gap), cy = M + 8 + Math.floor(k / perRow) * (h + gap);
+        drawSticker(pg, r, lay, partIdx, cx, cy, w, h);
+        cropMarks(pg, cx, cy, w, h);
+      });
+      // Kontrollmaß
+      const by = 297 - M + 1;
+      pg.stroke(C.ink).lw(0.3).line(M, by, M + 50, by);
+      pg.line(M, by - 1.2, M, by + 1.2); pg.line(M + 50, by - 1.2, M + 50, by + 1.2);
+      pg.text('Kontrollmaß 50 mm – nachmessen, ob ohne Skalierung gedruckt wurde', M + 53, by + 1, { size: 6.5, color: C.ink2 });
+    }
+    return doc;
+  }
+
+  /* -------------------------------------------------- Bericht (A4) */
+  function header(pg, r, title) {
+    pg.fill(C.ink).rect(0, 0, 210, 20);
+    pg.text('RADSPORT-PLANER', 14, 8.5, { size: 7, bold: true, color: '#8fd3cc' });
+    pg.text(title, 14, 15.5, { size: 14, bold: true, color: C.white });
+    pg.text(r.route.name, 196, 15.5, { size: 9, color: '#c9d6db', align: 'right', maxW: 100 });
+  }
+  function footer(pg, n, total) {
+    pg.stroke(C.grid).lw(0.2).line(14, 285, 196, 285);
+    pg.text('Modellrechnung auf Basis deiner Angaben – Richtwerte, keine Garantie. Bei Unwohlsein Belastung anpassen.', 14, 289.5, { size: 6.5, color: C.muted });
+    pg.text(`Seite ${n}/${total}`, 196, 289.5, { size: 6.5, color: C.muted, align: 'right' });
+  }
+
+  function kpiGrid(pg, items, x, y, w, cols) {
+    const cw = w / cols, ch = 15;
+    items.forEach((it, i) => {
+      const cx = x + (i % cols) * cw, cy = y + Math.floor(i / cols) * (ch + 2);
+      pg.fill(C.panel).roundRect(cx, cy, cw - 2, ch, 1.6, 'f');
+      pg.text(it[0], cx + 3, cy + 5, { size: 6.5, color: C.ink2 });
+      const vw = pg.text(it[1], cx + 3, cy + 11.6, { size: 13, bold: true, color: C.ink });
+      if (it[2]) pg.text(it[2], cx + 3 + vw + 0.8, cy + 11.6, { size: 7, color: C.ink2 });
+    });
+    return y + Math.ceil(items.length / cols) * (ch + 2);
+  }
+
+  function axisY(pg, x, y, h, w, lo, hi, ticks, fmt) {
+    ticks.forEach(t => {
+      const yy = y + h - (t - lo) / (hi - lo) * h;
+      pg.stroke(C.grid).lw(0.15).line(x, yy, x + w, yy);
+      pg.text(fmt(t), x - 1.2, yy + 1, { size: 6, color: C.muted, align: 'right' });
+    });
+  }
+  function niceTicks(lo, hi, n) {
+    const span = hi - lo, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const st = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || mag * 10;
+    const out = [];
+    for (let t = Math.ceil(lo / st) * st; t <= hi + 1e-9; t += st) out.push(Math.round(t * 1000) / 1000);
+    return out;
+  }
+
+  function charts(pg, r, x, y, w) {
+    const route = r.route, D = route.D, X = d => x + d / D * w;
+    // 1) Höhenprofil
+    const h1 = 46;
+    pg.text('Höhenprofil – Fläche eingefärbt nach Ziel-Leistungszone', x, y - 2, { size: 7.5, bold: true, color: C.ink });
+    const minE = Math.floor(route.minEle / 50) * 50, maxE = Math.ceil((Math.max(route.maxEle, route.minEle + 40) + (route.maxEle - route.minEle) * 0.12) / 50) * 50;
+    axisY(pg, x, y, h1, w, minE, maxE, niceTicks(minE, maxE, 4), v => nf(v) + ' m');
+    const rr = Object.assign({}, r, { route: Object.assign({}, route, { minEle: minE, maxEle: maxE }) });
+    drawProfile(pg, rr, x, y, w, h1, { climbLabels: 7, fuel: 0.7 });
+    // 2) Ziel-Leistung
+    const y2 = y + h1 + 9, h2 = 30;
+    pg.text('Ziel-Leistung je Abschnitt (W) · gestrichelt: FTP', x, y2 - 2, { size: 7.5, bold: true, color: C.ink });
+    const pMax = Math.max(r.params.ftp * 1.1, ...r.sections.map(s => s.target)) , pMin = 0;
+    const hiP = Math.ceil(pMax / 50) * 50;
+    axisY(pg, x, y2, h2, w, pMin, hiP, niceTicks(0, hiP, 4), v => nf(v));
+    const PY = p => y2 + h2 - p / hiP * h2;
+    for (const s of r.sections) {
+      const x0 = X(s.kmStart * 1000), x1 = X(s.kmEnd * 1000);
+      const val = s.coasting ? 0 : s.target;
+      pg.fill(s.coasting ? C.roll : C.zones[s.zone - 1]).rect(x0 + 0.15, PY(val), Math.max(0.2, x1 - x0 - 0.3), y2 + h2 - PY(val));
+      if (s.coasting) pg.fill(C.roll).rect(x0 + 0.15, y2 + h2 - 0.8, Math.max(0.2, x1 - x0 - 0.3), 0.8);
+    }
+    pg.stroke(C.ink).lw(0.3).dash(1, 0.8).line(x, PY(r.params.ftp), x + w, PY(r.params.ftp)).dash(0);
+    // 3) W'-Bilanz
+    let yEnd = y2 + h2;
+    if (r.wStep) {
+      const y3 = y2 + h2 + 9, h3 = 22, W0 = r.params.wprime;
+      pg.text(`W'-Bilanz (kJ) · gestrichelt: Reserve ${nf(r.params.wReserve * 100)} %`, x, y3 - 2, { size: 7.5, bold: true, color: C.ink });
+      axisY(pg, x, y3, h3, w, 0, W0 / 1000, niceTicks(0, W0 / 1000, 3), v => nf(v, v < 10 && v % 1 ? 1 : 0));
+      const WY = v => y3 + h3 - v / W0 * h3;
+      const pts = [];
+      const step = Math.max(1, Math.floor(route.N / 500));
+      for (let i = 0; i < route.N; i += step) pts.push([X(route.x[i]), WY(r.wStep[i])]);
+      pg.stroke(C.accent).lw(0.5).lineJoin(1).poly(pts, false, 'S');
+      pg.stroke(C.ink2).lw(0.25).dash(1, 0.8).line(x, WY(W0 * r.params.wReserve), x + w, WY(W0 * r.params.wReserve)).dash(0);
+      yEnd = y3 + h3;
+    }
+    // x-Achse km
+    const kt = niceTicks(0, D / 1000, 8);
+    kt.forEach(k => { pg.text(nf(k), X(k * 1000), yEnd + 4, { size: 6, color: C.muted, align: 'center' }); });
+    pg.text('km', x + w, yEnd + 7.5, { size: 6, color: C.muted, align: 'right' });
+    // Zonen-Legende
+    let lx = x, ly = yEnd + 12;
+    E.ZONES.forEach((z, i) => {
+      pg.fill(C.zones[i]).rect(lx, ly - 2.2, 3, 2.4);
+      const tw = pg.text(z.name, lx + 4, ly, { size: 6, color: C.ink2 });
+      lx += tw + 8;
+    });
+    pg.fill(C.roll).rect(lx, ly - 2.2, 3, 2.4); pg.text('rollen', lx + 4, ly, { size: 6, color: C.ink2 });
+    return ly + 4;
+  }
+
+  function table(doc, r, title, cols, rows, startY, firstPage) {
+    let pg = firstPage, y = startY;
+    const x0 = 14, W = 182;
+    const totalW = cols.reduce((a, c) => a + c.w, 0);
+    const scale = W / totalW;
+    const drawHead = () => {
+      pg.fill(C.ink).rect(x0, y, W, 6.2);
+      let cx = x0;
+      cols.forEach(c => {
+        const cw = c.w * scale;
+        pg.text(c.h, c.align === 'right' ? cx + cw - 1.2 : cx + 1.2, y + 4.2, { size: 6.2, bold: true, color: C.white, align: c.align === 'right' ? 'right' : 'left', maxW: cw - 1.6 });
+        cx += cw;
+      });
+      y += 6.2;
+    };
+    if (title) { pg.text(title, x0, y + 3, { size: 10, bold: true, color: C.ink }); y += 6; }
+    drawHead();
+    rows.forEach((row, i) => {
+      if (y > 276) { pg = doc._newPage(title + ' (Fortsetzung)'); y = 30; drawHead(); }
+      if (i % 2) pg.fill(C.panel).rect(x0, y, W, 5.4);
+      let cx = x0;
+      cols.forEach((c, k) => {
+        const cw = c.w * scale, v = row[k];
+        if (v && typeof v === 'object' && v.chip) {
+          pg.fill(v.chip).rect(cx + 1.2, y + 1.2, 2.4, 3);
+          pg.text(v.text, cx + 4.4, y + 3.9, { size: 6.5, color: C.ink, maxW: cw - 5, bold: !!v.bold });
+        } else {
+          pg.text(v === undefined ? '' : String(v), c.align === 'right' ? cx + cw - 1.2 : cx + 1.2, y + 3.9, { size: 6.5, color: C.ink, align: c.align === 'right' ? 'right' : 'left', maxW: cw - 1.6, bold: !!c.bold });
+        }
+        cx += cw;
+      });
+      y += 5.4;
+    });
+    return { pg, y };
+  }
+
+  function buildReport(r) {
+    const doc = new PL.Doc({ title: `Strategie – ${r.route.name}` });
+    const s = r.summary, p = r.params;
+    const pages = [];
+    doc._newPage = (title) => { const pg = doc.addPage(210, 297); header(pg, r, title); pages.push(pg); return pg; };
+
+    // Seite 1
+    let pg = doc._newPage('Rennstrategie');
+    const typeLabel = E.TYPE_INFO[p.type] ? E.TYPE_INFO[p.type].label : '';
+    pg.text(`${typeLabel} · Start ${clock(s.startMin)} · Ankunft ca. ${clock(s.endMin)} · FTP ${nf(p.ftp)} W · Systemgewicht ${nf(p.mass, 1)} kg`, 14, 27, { size: 8, color: C.ink2 });
+    let y = kpiGrid(pg, [
+      ['Distanz', nf(s.D / 1000, 1), 'km'], ['Höhenmeter', nf(s.gain), 'm'], ['Fahrzeit', dur(s.T).replace(' h', ''), s.T >= 3600 ? 'h' : ''],
+      ['Ø Geschwindigkeit', nf(s.avgSpeed, 1), 'km/h'], ['Ø Leistung', nf(s.avgP), 'W'],
+      ['Normalized Power', nf(s.NP), 'W'], ['Intensity Factor', nf(s.IF, 2), ''], ['TSS', nf(s.TSS), ''],
+      ['Arbeit', nf(s.kJ), 'kJ'], ['Kohlenhydrate', r.fuel.gph ? nf(r.fuel.total) : '–', r.fuel.gph ? `g (${r.fuel.gph} g/h)` : ''],
+    ], 14, 31, 184, 5);
+    y = charts(pg, r, 26, y + 8, 170);
+    // Strategie
+    y += 3;
+    pg.text('Strategie', 14, y, { size: 10, bold: true, color: C.ink });
+    y += 5;
+    const strat = E.strategy(r);
+    for (const st of strat) {
+      if (y > 278) { pg = doc._newPage('Rennstrategie (Fortsetzung)'); y = 30; }
+      pg.text(st.k, 14, y, { size: 7.5, bold: true, color: C.accent });
+      y = pg.para(st.t, 40, y, 156, { size: 7.5, color: C.ink, lh: 3.3 }) + 1.2;
+    }
+
+    // Abschnittstabelle
+    pg = doc._newPage('Abschnitte');
+    const cols = [
+      { h: 'Nr', w: 7 }, { h: 'Typ', w: 23 }, { h: 'km', w: 22 }, { h: 'Länge', w: 12, align: 'right' }, { h: 'Hm', w: 10, align: 'right' },
+      { h: 'Ø %', w: 9, align: 'right' }, { h: 'max %', w: 10, align: 'right' }, { h: 'Ziel', w: 13, align: 'right', bold: true },
+      { h: '% FTP', w: 11, align: 'right' }, { h: 'Gang · U/min', w: 21 }, { h: 'km/h', w: 10, align: 'right' }, { h: 'Dauer', w: 13, align: 'right' }, { h: 'Uhrzeit', w: 12, align: 'right' },
+    ];
+    const rows = r.sections.map(sc => [
+      sc.idx + 1,
+      { chip: sc.coasting ? C.roll : C.zones[sc.zone - 1], text: clsLabel[sc.cls] + (sc.climbNo ? ` ${sc.climbNo}` : '') },
+      `${nf(sc.kmStart, 1)}–${nf(sc.kmEnd, 1)}`, nf(sc.len / 1000, 1), nf(sc.gain), nf(sc.grade * 100, 1), nf(sc.maxGrade * 100, 1),
+      sc.coasting ? 'rollen' : `${sc.target} W`, sc.coasting ? '–' : nf(sc.targetPct * 100),
+      sc.coasting || !sc.gear ? '–' : `${sc.gear.f}×${sc.gear.r} · ${nf(sc.gear.cad)}`,
+      nf(sc.speed, 1), dur(sc.dur), clock(sc.clock),
+    ]);
+    let t = table(doc, r, 'Abschnitte mit Leistungsvorgabe', cols, rows, 28, pg);
+    pg = t.pg; y = t.y + 8;
+
+    // Anstiege
+    if (r.climbs.length) {
+      if (y > 230) { pg = doc._newPage('Anstiege'); y = 28; }
+      const cc = [
+        { h: 'Nr', w: 8 }, { h: 'ab km', w: 13, align: 'right' }, { h: 'Länge', w: 13, align: 'right' }, { h: 'Hm', w: 11, align: 'right' },
+        { h: 'Ø %', w: 10, align: 'right' }, { h: 'max %', w: 11, align: 'right' }, { h: 'Ziel', w: 14, align: 'right', bold: true }, { h: 'W/kg', w: 11, align: 'right' },
+        { h: 'Dauer', w: 13, align: 'right' }, { h: 'Gang · U/min', w: 20 }, { h: 'steilste Stelle im kleinsten Gang', w: 40 },
+      ];
+      const cr = r.climbs.map(c => [
+        c.no, nf(c.kmStart, 1), nf(c.len / 1000, 1), nf(c.gain), nf(c.grade * 100, 1), nf(c.maxGrade * 100, 1), `${c.target} W`,
+        nf(c.target / p.riderKg, 2), dur(c.dur), c.gear ? `${c.gear.f}×${c.gear.r} · ${nf(c.gear.cad)}` : '–',
+        c.steepWarn ? `${c.steepWarn.gear.f}×${c.steepWarn.gear.r}: ca. ${nf(c.steepWarn.cad)} U/min` : 'ok',
+      ]);
+      t = table(doc, r, 'Anstiege', cc, cr, y, pg);
+      pg = t.pg; y = t.y + 8;
+    }
+
+    // Zonen & Verpflegung
+    if (y > 200) { pg = doc._newPage('Belastung & Verpflegung'); y = 28; }
+    pg.text('Zeit in Leistungszonen (Coggan)', 14, y + 3, { size: 10, bold: true, color: C.ink });
+    y += 8;
+    const Tz = r.zones.reduce((a, z) => a + z.s, 0) || 1;
+    const maxZ = Math.max(...r.zones.map(z => z.s), 1);
+    r.zones.forEach((z, i) => {
+      pg.text(z.name, 14, y + 3, { size: 7, color: C.ink2 });
+      const bw = 110 * z.s / maxZ;
+      pg.fill(C.zones[i]).roundRect(52, y, Math.max(0.6, bw), 4, 0.8, 'f');
+      pg.text(`${dur(z.s)} · ${nf(z.s / Tz * 100)} %`, 52 + bw + 2, y + 3, { size: 7, color: C.ink });
+      y += 5.6;
+    });
+    y += 5;
+    pg.text('Verpflegung', 14, y + 3, { size: 10, bold: true, color: C.ink });
+    y += 7;
+    y = pg.para(`Empfehlung für ${dur(s.T)} Fahrzeit (Jeukendrup 2014): ${r.fuel.rec.text}. Geplant: ${r.fuel.gph} g/h, alle ${r.fuel.every} min.`, 14, y, 182, { size: 7.5, color: C.ink, lh: 3.3 }) + 2;
+    if (r.fuel.markers.length) {
+      const fc = [{ h: '#', w: 8 }, { h: 'Fahrzeit', w: 18, align: 'right' }, { h: 'Uhrzeit', w: 16, align: 'right' }, { h: 'bei km', w: 16, align: 'right' }, { h: 'Kohlenhydrate', w: 22, align: 'right' }];
+      const fr = r.fuel.markers.map((m, i) => [i + 1, dur(m.t), clock(m.clock), nf(m.km, 1), `${m.grams} g`]);
+      t = table(doc, r, '', fc.map(c => Object.assign({}, c, { w: c.w })), fr, y, pg);
+      pg = t.pg; y = t.y + 6;
+    }
+
+    // Annahmen & Methodik
+    pg = doc._newPage('Annahmen & Methodik');
+    y = 30;
+    pg.text('Deine Eingaben', 14, y, { size: 10, bold: true, color: C.ink }); y += 6;
+    const gearTxt = `${p.chainrings.join('/')} · ${p.cogs[0]}–${p.cogs[p.cogs.length - 1]} (${p.cogs.length}-fach) · Abrollumfang ${nf(p.circ * 1000)} mm`;
+    const inputs = [
+      ['FTP', `${nf(p.ftp)} W`], ['CP / W\'', p.wprime ? `${nf(p.cp || p.ftp)} W / ${nf(p.wprime / 1000, 1)} kJ${p.cp ? '' : ' (CP = FTP angenommen)'}` : 'W\' nicht angegeben'],
+      ['Gewicht', `Fahrer ${nf(p.riderKg, 1)} kg · Rad ${nf(p.bikeKg, 1)} kg · Zuladung ${nf(p.extraKg, 1)} kg`],
+      ['Aerodynamik', `CdA ${nf(p.cda, 3)} m² · Crr ${nf(p.crr, 4)} · Antriebswirkungsgrad ${nf(p.eta * 100, 1)} %`],
+      ['Übersetzung', gearTxt], ['Trittfrequenz', `Wunsch ${p.cadFlat} U/min (flach) bis ${p.cadClimb} U/min (ab 8 %), max. ${p.cadMax} U/min`],
+      ['Umgebung', `${nf(p.temp)} °C · Wind ${nf(p.windSpeed)} km/h aus ${nf(p.windFrom)}° · Höchstgeschw. bergab ${nf(p.vmaxDown)} km/h`],
+      ['Taktik', `Ziel-IF ${nf(s.ifTarget, 2)} · Pacing-Spanne ±${nf(s.variability * 100)} %`],
+    ];
+    inputs.forEach(([k, v]) => { pg.text(k, 14, y, { size: 7.5, bold: true, color: C.ink2 }); pg.text(v, 44, y, { size: 7.5, color: C.ink, maxW: 152 }); y += 4.4; });
+    y += 4;
+    pg.text('So rechnet die App', 14, y, { size: 10, bold: true, color: C.ink }); y += 6;
+    METHOD.forEach(m => {
+      pg.text(m[0], 14, y, { size: 7.5, bold: true, color: C.accent });
+      y = pg.para(m[1], 14, y + 3.6, 182, { size: 7.2, color: C.ink, lh: 3.15 }) + 2.4;
+    });
+    y += 2;
+    pg.text('Quellen', 14, y, { size: 10, bold: true, color: C.ink }); y += 5;
+    SOURCES.forEach(q => {
+      if (y > 280) { pg = doc._newPage('Quellen (Fortsetzung)'); y = 30; }
+      y = pg.para(q, 14, y, 182, { size: 6.6, color: C.ink2, lh: 2.9 }) + 0.8;
+    });
+
+    pages.forEach((pgx, i) => footer(pgx, i + 1, pages.length));
+    return doc;
+  }
+
+  const METHOD = [
+    ['Geschwindigkeit', 'Für jeden 20-m-Schritt wird aus Leistung, Steigung, Rollwiderstand, Luftwiderstand (Luftdichte aus Höhe und Temperatur, optional Wind) und Masse die Geschwindigkeit berechnet – nach dem validierten Modell von Martin et al. (1998), inklusive Beschleunigung. Bergab wird bei deiner Höchstgeschwindigkeit gebremst; über der Spin-out-Geschwindigkeit (größter Gang bei maximaler Trittfrequenz) wird gerollt.'],
+    ['Leistungsverteilung', 'Modellstudien und Feldversuche zeigen, dass eine mit dem Gelände variierende Leistung schneller ist als konstante Leistung bei gleicher Durchschnittsleistung (Swain 1997; Atkinson et al. 2007; Cangley et al. 2011). Die App berechnet je Abschnitt, wie stark die Fahrzeit auf zusätzliche Leistung reagiert, und verteilt die Leistung zeitminimal bei fester Normalized Power. Die Spanne nach oben ist begrenzt (Standard ±10 %, entspricht dem Modell von Atkinson et al. 2007; im Labor wurden +5 % bergauf überwiegend toleriert, Atkinson, Peacock & Law 2007).'],
+    ['Belastungsziel', 'Die Gesamtbelastung wird über die Normalized Power gesteuert: Ziel-NP = Ziel-IF × FTP. Du gibst sie als IF, als Watt-Wert (NP) oder über eine Zielzeit vor; die App rechnet jeweils den passenden IF aus. Richtwerte für den IF nach Coggan: Grundlagenfahrten 0,75–0,85; Straßenrennen > 2,5 h 0,85–0,95; Zeitfahren ca. 40 km 0,95–1,05; ca. 15 km 1,05–1,15.'],
+    ['Zettel kompakt', 'Im Modus „Kompakt“ stehen Grundwerte für Flachstücke, übrige Anstiege und Abfahrten oben; einzeln aufgeführt werden Anstiege ab der gewählten Höhe und Flachstücke, deren Vorgabe mindestens 5 % vom Grundwert abweicht (z. B. Gegenwind). Passt nicht alles auf einen Zettel, bleiben die Abschnitte mit der größten Zeitwirkung (Dauer × Zeit-Elastizität) – meist die längsten Anstiege.'],
+    ['W\'-Bilanz', 'Mit CP und W\' wird die Bilanz der anaeroben Arbeitskapazität nach Skiba et al. (2015) berechnet. Fällt sie unter die Reserve, reduziert die App zuerst die Spanne und dann den IF. CP und W\' lassen sich aus Bestleistungen mit dem linearen Arbeit-Zeit-Modell bestimmen (Monod & Scherrer 1965); Leistungen zwischen ca. 2 und 20 min mit mindestens einer über 12 min liefern laut Mattioni Maturana et al. (2018) verlässlichere Werte.'],
+    ['Trittfrequenz & Gang', 'Wunsch-Trittfrequenz linear zwischen flach und 8 % Steigung. Profis wählten im Rennen ~89–92 U/min in Ebene und Zeitfahren und ~71 U/min an Pässen (Lucía et al. 2001). Gewählt wird der Gang, der deiner Wunsch-Trittfrequenz am nächsten kommt; extreme Schräglagen der Kette werden ausgeschlossen.'],
+    ['Verpflegung', 'Kohlenhydrate nach Dauer (Jeukendrup 2014): 1–2 h bis 30 g/h, 2–3 h bis 60 g/h, über 2,5 h bis 90 g/h mit Glukose-Fruktose-Mischungen.'],
+    ['Grenzen', 'Windschatten, Kurven, Ampeln, Straßenbelag und Tagesform sind nicht modelliert. CdA und Crr sind die größten Unsicherheiten – kalibriere CdA mit einer eigenen Fahrt. Die FTP ist nicht identisch mit der Critical Power.'],
+  ];
+  const SOURCES = [
+    'Atkinson G, Peacock O, Passfield L (2007). Variable versus constant power strategies during cycling time-trials: prediction of time savings using an up-to-date mathematical model. J Sports Sci 25(9):1001–1009.',
+    'Atkinson G, Peacock O, Law M (2007). Acceptability of power variation during a simulated hilly time trial. Int J Sports Med 28(2):157–163.',
+    'Cangley P, Passfield L, Carter H, Bailey M (2011). The effect of variable gradients on pacing in cycling time-trials. Int J Sports Med 32(2):132–136.',
+    'Coggan AR. Normalized Power, Intensity Factor and Training Stress Score. TrainingPeaks.',
+    'Jeukendrup A (2014). A step towards personalized sports nutrition: carbohydrate intake during exercise. Sports Med 44(Suppl 1):S25–S33.',
+    'Lucía A, Hoyos J, Chicharro JL (2001). Preferred pedalling cadence in professional cycling. Med Sci Sports Exerc 33(8):1361–1366.',
+    'Martin JC, Milliken DL, Cobb JE, McFadden KL, Coggan AR (1998). Validation of a mathematical model for road cycling power. J Appl Biomech 14(3):276–291.',
+    'Mattioni Maturana F, Fontana FY, Pogliaghi S, Passfield L, Murias JM (2018). Critical power: How different protocols and models affect its determination. J Sci Med Sport 21(7):742–747.',
+    'Monod H, Scherrer J (1965). The work capacity of a synergic muscular group. Ergonomics 8(3):329–338.',
+    'Skiba PF, Fulford J, Clarke DC, Vanhatalo A, Jones AM (2015). Intramuscular determinants of the ability to recover work capacity above critical power. Eur J Appl Physiol 115(4):703–713.',
+    'Swain DP (1997). A model for optimizing cycling performance by varying power on hills and in wind. Med Sci Sports Exerc 29(8):1104–1108.',
+  ];
+
+  const API = { buildReport, buildSticker, stickerLayout, compactKeys, drawSticker, drawProfile, stickerRows, STICKER_DEFAULTS, COLORS: C, METHOD, SOURCES };
+  if (typeof module !== 'undefined' && module.exports) module.exports = API;
+  else root.Report = API;
+})(typeof window !== 'undefined' ? window : globalThis);
+
+/* =========================================================================
+   Radsport-Planer – Oberfläche
+   ========================================================================= */
+(function () {
+  'use strict';
+  const E = window.Engine, R = window.Report, PL = window.PDFLite;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const $$ = (s, el) => Array.from((el || document).querySelectorAll(s));
+  const esc = s => String(s === undefined || s === null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const nf = (x, d) => (x === null || x === undefined || !isFinite(x)) ? '–' : Number(x).toLocaleString('de-DE', { minimumFractionDigits: d || 0, maximumFractionDigits: d || 0 });
+  const num = v => { if (v === '' || v === null || v === undefined) return null; const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : null; };
+  const clock = m => { m = Math.round(m) % 1440; return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; };
+  const fmtDur = s => E.fmtDur(s);
+  const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+
+  /* ---------------------------------------------------------- Icons */
+  const IC = {
+    route: '<svg viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.2"/><circle cx="18" cy="6" r="2.2"/><path d="M8 18h7.5a3.5 3.5 0 0 0 0-7h-7a3.5 3.5 0 0 1 0-7H16"/></svg>',
+    rider: '<svg viewBox="0 0 24 24"><circle cx="5.5" cy="17" r="3.5"/><circle cx="18.5" cy="17" r="3.5"/><path d="M5.5 17l4-7h6l3 7M9.5 10L12 17h-2M13 6h3l-0.5 4"/></svg>',
+    plan: '<svg viewBox="0 0 24 24"><path d="M3 19l5-8 4 4 4-9 5 13"/><path d="M3 21h18"/></svg>',
+    export: '<svg viewBox="0 0 24 24"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>',
+    method: '<svg viewBox="0 0 24 24"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7M8 11h5"/></svg>',
+    upload: '<svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>',
+    trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>',
+    pdf: '<svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 14h6M9 18h6"/></svg>',
+    tag: '<svg viewBox="0 0 24 24"><rect x="8" y="2" width="8" height="20" rx="1.5"/><path d="M10.5 6h3M10.5 10h3M10.5 14h3"/></svg>',
+  };
+
+  /* ---------------------------------------------------- Speicher */
+  const KEY = 'radplaner.v1';
+  const store = {
+    load() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } },
+    save(data) {
+      try { localStorage.setItem(KEY, JSON.stringify(data)); return true; }
+      catch (e) { toast('Speicher voll – lösche ältere Strecken, damit Änderungen erhalten bleiben.'); return false; }
+    },
+  };
+
+  const CRANKS = { '50/34': [50, 34], '52/36': [52, 36] };
+  const CASSETTES = {
+    '11-34': [11, 12, 13, 14, 15, 17, 19, 21, 24, 27, 30, 34],
+    '11-36': [11, 12, 13, 14, 15, 17, 19, 21, 24, 28, 32, 36],
+  };
+  const POSITIONS = { upright: ['Oberlenker / aufrecht', 0.40], hoods: ['Bremsgriffe', 0.36], drops: ['Unterlenker', 0.32], tt: ['Zeitfahrlenker', 0.25], custom: ['Eigener Wert', null] };
+  const CRR = { smooth: ['Sehr glatter Asphalt', 0.003], normal: ['Normaler Asphalt', 0.004], rough: ['Rauer Asphalt', 0.006], bad: ['Schlechter Belag', 0.008], custom: ['Eigener Wert', null] };
+  const WIND = [['N', 0], ['NO', 45], ['O', 90], ['SO', 135], ['S', 180], ['SW', 225], ['W', 270], ['NW', 315]];
+
+  const DEF_RIDER = {
+    example: true, ftp: 250, cp: '', wprime: '', wReserve: 25,
+    riderKg: 75, bikeKg: 8.0, extraKg: 2.0,
+    position: 'hoods', cda: 0.36, crrPreset: 'normal', crr: 0.004,
+    crank: '52/36', crankCustom: '', cassette: '11-34', cassetteCustom: '', tireMm: 28, circMm: '',
+    cadFlat: 90, cadClimb: 75, cadMax: 115,
+  };
+  const DEF_RACE = { type: 'granfondo', intMode: 'if', ifTarget: 0.80, targetNP: '', targetTime: '', ifSolved: null, variability: 10, startTime: '09:00', temp: 18, windSpeed: 0, windFrom: 270, vmaxDown: 60, carbGph: '', fuelEveryMin: 20 };
+  const STICKERS = { stem30: ['Vorbau schmal', 30, 115], stem32: ['Vorbau', 32, 120], stem40: ['Vorbau breit', 40, 120], tube: ['Oberrohr', 30, 200], custom: ['Eigenes Format', null, null] };
+
+  const saved = store.load() || {};
+  const S = {
+    rider: Object.assign({}, DEF_RIDER, saved.rider || {}),
+    race: Object.assign({}, DEF_RACE, saved.race || {}),
+    routes: saved.routes || [],
+    activeId: saved.activeId || 'sample',
+    tab: saved.tab || 'plan',
+    sticker: Object.assign({ fmt: 'stem32', w: 32, h: 120, copies: 1, mode: 'compact', minGain: 30, lines: 2, round5: false, profile: true, autoFont: true, picks: {} }, saved.sticker || {}),
+    helpOpen: saved.helpOpen,
+    selected: null,
+  };
+  if (S.activeId !== 'sample' && !S.routes.find(r => r.id === S.activeId)) S.activeId = 'sample';
+  const persist = () => store.save({ rider: S.rider, race: S.race, routes: S.routes, activeId: S.activeId, tab: S.tab, sticker: S.sticker, helpOpen: S.helpOpen });
+
+  /* ------------------------------------------- Beispielstrecke */
+  function sampleParsed() {
+    let seed = 7;
+    const rnd = () => { seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; };
+    const gauss = () => { const u = Math.max(1e-9, rnd()), v = rnd(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+    const lat0 = 49.52, lon0 = 11.92, D = 118000, n = Math.round(D / 25), pts = [];
+    const hills = [[16e3, 4.2e3, 150], [37e3, 1.8e3, 80], [58e3, 6.5e3, 265], [74e3, 1.2e3, 50], [92e3, 3.4e3, 150], [106e3, 0.9e3, 38]];
+    const r = D / (2 * Math.PI);
+    for (let i = 0; i <= n; i++) {
+      const s = i * D / n, a = 2 * Math.PI * s / D;
+      const lat = lat0 + (r * Math.sin(a) * 0.8) / 111320;
+      const lon = lon0 + (r * (1 - Math.cos(a)) + 1400 * Math.sin(4 * a) + 600 * Math.sin(9 * a)) / (111320 * Math.cos(lat0 * Math.PI / 180));
+      let e = 405 + 22 * Math.sin(s / 2800) + 9 * Math.sin(s / 900);
+      for (const [c, w, h] of hills) {
+        if (s >= c - w && s <= c) e += h * Math.pow((s - (c - w)) / w, 1.2);
+        else if (s > c && s <= c + 0.8 * w) e += h * (1 - (s - c) / (0.8 * w));
+      }
+      pts.push({ lat, lon, ele: e + gauss() * 1.0 });
+    }
+    return { name: 'Beispielschleife (synthetisch)', pts };
+  }
+
+  function compactPts(parsed) {
+    const out = [];
+    let last = null;
+    for (const p of parsed.pts) {
+      if (last) {
+        const dy = (p.lat - last.lat) * 111320, dx = (p.lon - last.lon) * 111320 * Math.cos(p.lat * Math.PI / 180);
+        if (dx * dx + dy * dy < 64) continue;
+      }
+      out.push([Math.round(p.lat * 1e5) / 1e5, Math.round(p.lon * 1e5) / 1e5, Math.round(p.ele * 10) / 10]);
+      last = p;
+    }
+    const lp = parsed.pts[parsed.pts.length - 1];
+    out.push([Math.round(lp.lat * 1e5) / 1e5, Math.round(lp.lon * 1e5) / 1e5, Math.round(lp.ele * 10) / 10]);
+    return out;
+  }
+
+  /* ---------------------------------------------- Berechnung */
+  let routeCache = { id: null, route: null }, PLAN = null, lastMs = 0;
+  function getRoute() {
+    if (routeCache.id === S.activeId && routeCache.route) return routeCache.route;
+    let parsed;
+    if (S.activeId === 'sample') parsed = sampleParsed();
+    else {
+      const rr = S.routes.find(x => x.id === S.activeId);
+      parsed = { name: rr.name, pts: rr.pts.map(a => ({ lat: a[0], lon: a[1], ele: a[2] })) };
+    }
+    const route = E.buildRoute(parsed);
+    routeCache = { id: S.activeId, route };
+    return route;
+  }
+
+  function params() {
+    const r = S.rider, c = S.race;
+    const parseList = s => String(s || '').split(/[^0-9]+/).map(Number).filter(x => x > 5 && x < 80);
+    let chainrings = r.crank === 'custom' ? parseList(r.crankCustom) : CRANKS[r.crank];
+    if (!chainrings || !chainrings.length) chainrings = [52, 36];
+    let cogs = r.cassette === 'custom' ? parseList(r.cassetteCustom) : CASSETTES[r.cassette];
+    if (!cogs || cogs.length < 2) cogs = CASSETTES['11-34'];
+    const wpk = num(r.wprime);
+    const ftp = Math.max(80, num(r.ftp) || 250);
+    let ifT = num(c.ifTarget) || 0.8;
+    if (c.intMode === 'np' && num(c.targetNP)) ifT = num(c.targetNP) / ftp;
+    if (c.intMode === 'time' && c.ifSolved) ifT = c.ifSolved;
+    ifT = Math.max(0.4, Math.min(1.3, ifT));
+    return {
+      riderKg: num(r.riderKg) || 75, bikeKg: num(r.bikeKg) || 8, extraKg: num(r.extraKg) || 0,
+      ftp, cp: num(r.cp), wprime: wpk ? wpk * 1000 : null, wReserve: (num(r.wReserve) || 25) / 100,
+      cda: num(r.cda) || 0.36, crr: num(r.crr) || 0.004, eta: 0.976,
+      chainrings, cogs, tireMm: num(r.tireMm) || 28, circMm: num(r.circMm),
+      cadFlat: num(r.cadFlat) || 90, cadClimb: num(r.cadClimb) || 75, cadMax: num(r.cadMax) || 115,
+      temp: num(c.temp) ?? 18, windSpeed: num(c.windSpeed) || 0, windFrom: num(c.windFrom) ?? 270,
+      type: c.type, ifTarget: ifT, variability: (num(c.variability) ?? 10) / 100, vmaxDown: num(c.vmaxDown) || 60,
+      startTime: c.startTime || '09:00', carbGph: c.carbGph === '' ? null : num(c.carbGph), fuelEveryMin: num(c.fuelEveryMin) || 20,
+    };
+  }
+
+  let pending = null;
+  function schedule() { clearTimeout(pending); pending = setTimeout(recompute, 120); }
+  function parseTargetTime(t) { const m = String(t || '').match(/^(\d+):(\d{1,2})$/); return m ? (+m[1]) * 3600 + (+m[2]) * 60 : null; }
+  function recompute() {
+    if (S.race.intMode === 'time' && parseTargetTime(S.race.targetTime)) {
+      const live = $('#int-live');
+      if (live && !live.querySelector('.spinner')) live.insertAdjacentHTML('afterbegin', '<p class="small"><span class="spinner"></span> suche passenden IF …</p>');
+      setTimeout(computeNow, 30);
+    } else computeNow();
+  }
+  function computeNow() {
+    const t0 = performance.now();
+    try {
+      solveInfo = null;
+      const tt = S.race.intMode === 'time' ? parseTargetTime(S.race.targetTime) : null;
+      if (tt) {
+        S.race.ifSolved = null;
+        solveInfo = solveIF(getRoute(), params(), tt);
+        S.race.ifSolved = solveInfo.status === 'ok' ? solveInfo.iff : null;
+        persist();
+      }
+      PLAN = E.plan(getRoute(), params());
+      lastMs = performance.now() - t0;
+      renderAll();
+    } catch (err) {
+      console.error(err);
+      toast(err.message || 'Berechnung fehlgeschlagen.');
+    }
+  }
+
+  /* ----------------------------------------------------- Toast */
+  let toastT = null;
+  function toast(msg) {
+    let el = $('#toast');
+    if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = msg; el.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 4200);
+  }
+
+  /* ------------------------------------------- Formularbausteine */
+  function fNum(id, label, unit, val, o) {
+    o = o || {};
+    return `<div class="field"><label for="${id}">${esc(label)}</label><div class="inp"><input id="${id}" data-k="${o.k || id}" data-g="${o.g}" inputmode="decimal" autocomplete="off" class="${unit ? 'has-unit' : ''}" value="${esc(val === null || val === undefined ? '' : String(val).replace('.', ','))}" placeholder="${esc(o.ph || '')}">${unit ? `<span class="unit">${esc(unit)}</span>` : ''}</div>${o.hint ? `<div class="hint">${o.hint}</div>` : ''}</div>`;
+  }
+  function fSel(id, label, val, options, o) {
+    o = o || {};
+    return `<div class="field${o.wide ? ' wide' : ''}"><label for="${id}">${esc(label)}</label><div class="inp"><select id="${id}" data-k="${o.k || id}" data-g="${o.g}">${options.map(([v, t]) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(t)}</option>`).join('')}</select></div>${o.hint ? `<div class="hint">${o.hint}</div>` : ''}</div>`;
+  }
+
+  /* ---------------------------------------------------- Ansichten */
+  const TABS = [
+    ['route', 'Strecke', IC.route], ['rider', 'Fahrer & Rad', IC.rider], ['plan', 'Plan', IC.plan], ['export', 'Export', IC.export], ['method', 'Methodik', IC.method],
+  ];
+  const TITLES = { route: 'Strecke', rider: 'Fahrer & Rad', plan: 'Rennstrategie', export: 'Export', method: 'Methodik & Quellen' };
+
+  function shell() {
+    document.getElementById('app').innerHTML = `
+      <nav class="tabs glass" aria-label="Bereiche">
+        <div class="brand"><div class="logo">Radsport<span>·</span>Planer</div><div class="tag">Pacing nach Gelände, Leistung & Physik</div></div>
+        ${TABS.map(([id, t, ic]) => `<button class="tab" type="button" data-tab="${id}" aria-current="${S.tab === id ? 'page' : 'false'}">${ic}<span>${t}</span></button>`).join('')}
+      </nav>
+      <main>
+        <header class="head">
+          <div class="titles"><div class="eyebrow" id="h-eyebrow"></div><h1 id="h-title"></h1></div>
+          <button class="routechip glass" type="button" data-tab="route" id="h-route"><span class="dot"></span><span class="name"></span></button>
+        </header>
+        <section class="view" id="v-route"></section>
+        <section class="view" id="v-rider"></section>
+        <section class="view" id="v-plan"></section>
+        <section class="view" id="v-export"></section>
+        <section class="view" id="v-method"></section>
+      </main>`;
+    $$('[data-tab]').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
+    buildRiderView();
+    buildPlanControls();
+    buildExportView();
+    buildMethodView();
+    buildRouteView();
+    setTab(S.tab, true);
+  }
+
+  function setTab(id, initial) {
+    S.tab = id; persist();
+    $$('.tab').forEach(b => b.setAttribute('aria-current', b.dataset.tab === id ? 'page' : 'false'));
+    TABS.forEach(([t]) => { $('#v-' + t).hidden = t !== id; });
+    $('#h-title').textContent = TITLES[id];
+    if (!initial) window.scrollTo({ top: 0 });
+    if (PLAN) { if (id === 'plan') renderPlan(); if (id === 'export') renderExport(); if (id === 'route') renderRoute(); }
+  }
+
+  function renderHeader() {
+    const r = PLAN.route;
+    $('#h-route .name').textContent = `${r.name} · ${nf(r.D / 1000, 1)} km · ${nf(r.gain)} Hm`;
+    const ex = [];
+    if (S.activeId === 'sample') ex.push('Beispielstrecke');
+    if (S.rider.example) ex.push('Beispielwerte');
+    $('#h-eyebrow').innerHTML = ex.length ? `<span class="badge">${ex.join(' · ')}</span>` : esc(E.TYPE_INFO[S.race.type].label);
+  }
+
+  /* ---------------------------------------------- Fahrer & Rad */
+  function buildRiderView() {
+    const r = S.rider;
+    $('#v-rider').innerHTML = `
+      ${r.example ? `<div class="note warn" id="ex-note">Hier stehen Beispielwerte. Trage deine eigenen Werte ein – die Strategie rechnet sofort neu.</div>` : ''}
+      <div class="grid2">
+        <div class="glass card">
+          <div class="section-title"><h2>Leistung</h2></div>
+          <div class="fields">
+            ${fNum('ftp', 'FTP', 'W', r.ftp, { g: 'rider' })}
+            ${fNum('cp', 'Critical Power (optional)', 'W', r.cp, { g: 'rider', ph: '= FTP' })}
+            ${fNum('wprime', "W' (optional)", 'kJ', r.wprime, { g: 'rider', ph: 'leer' })}
+            ${fNum('wReserve', "W'-Reserve", '%', r.wReserve, { g: 'rider' })}
+          </div>
+          <details class="more" id="cpcalc"><summary>W' und CP aus Bestleistungen berechnen</summary><div>
+            <p class="hint">Trage 2–4 maximale Leistungen aus ausgeruhtem Zustand ein, z. B. aus einem Test oder deiner Leistungskurve. Laut Studienlage liefern Dauern zwischen ca. 2 und 20 min mit mindestens einer über 12 min die verlässlichsten Werte (Mattioni Maturana et al. 2018). Bestwerte aus normalen Ausfahrten sind oft keine echten Maximalleistungen.</p>
+            <div class="fields" id="cp-rows">
+              ${[[3, ''], [12, ''], [20, ''], ['', '']].map(([m, p], i) => `${fNum('cpT' + i, `Dauer ${i + 1}`, 'min', m, { g: 'calc' })}${fNum('cpP' + i, `Leistung ${i + 1}`, 'W', p, { g: 'calc' })}`).join('')}
+            </div>
+            <div class="btnrow"><button class="btn small" type="button" id="cp-go">Berechnen</button><span id="cp-out" class="small"></span></div>
+          </div></details>
+        </div>
+        <div class="glass card">
+          <div class="section-title"><h2>Gewicht</h2></div>
+          <div class="fields">
+            ${fNum('riderKg', 'Fahrer', 'kg', r.riderKg, { g: 'rider' })}
+            ${fNum('bikeKg', 'Rad', 'kg', r.bikeKg, { g: 'rider' })}
+            ${fNum('extraKg', 'Zuladung', 'kg', r.extraKg, { g: 'rider', hint: 'Flaschen, Werkzeug, Kleidung' })}
+          </div>
+          <div class="divider"></div>
+          <div class="section-title"><h2>Aerodynamik & Rollwiderstand</h2></div>
+          <div class="fields">
+            ${fSel('position', 'Haltung', r.position, Object.entries(POSITIONS).map(([k, v]) => [k, v[1] ? `${v[0]} (${nf(v[1], 2)})` : v[0]]), { g: 'rider', wide: true })}
+            ${fNum('cda', 'CdA', 'm²', r.cda, { g: 'rider' })}
+            ${fSel('crrPreset', 'Belag', r.crrPreset, Object.entries(CRR).map(([k, v]) => [k, v[1] ? `${v[0]} (${nf(v[1], 3)})` : v[0]]), { g: 'rider', wide: true })}
+            ${fNum('crr', 'Crr', '', r.crr, { g: 'rider' })}
+          </div>
+          <p class="hint" style="margin-top:10px">Die Vorgaben für CdA und Crr sind grobe Richtwerte; veröffentlichte Werte streuen je nach Fahrer und Messung stark. Sie beeinflussen vor allem die Zeit im Flachen – kalibriere CdA mit einer eigenen Fahrt.</p>
+          <details class="more"><summary>CdA aus eigener Fahrt bestimmen</summary><div>
+            <p class="hint">Fahre auf einer flachen Strecke bei Windstille mit gleichmäßiger Leistung, am besten hin und zurück, und trage die Durchschnittswerte ein. Gerechnet wird mit Systemgewicht und Crr von oben.</p>
+            <div class="fields">
+              ${fNum('calP', 'Ø Leistung', 'W', '', { g: 'calc' })}${fNum('calV', 'Ø Tempo', 'km/h', '', { g: 'calc' })}
+              ${fNum('calE', 'Höhe', 'm', 400, { g: 'calc' })}${fNum('calT', 'Temperatur', '°C', 18, { g: 'calc' })}
+            </div>
+            <div class="btnrow"><button class="btn small" type="button" id="cal-go">Berechnen</button><span id="cal-out" class="small"></span></div>
+          </div></details>
+        </div>
+      </div>
+      <div class="glass card">
+        <div class="section-title"><h2>Antrieb & Trittfrequenz</h2><span class="eyebrow">Shimano 105 Di2 R7100 vorbelegt</span></div>
+        <div class="fields">
+          ${fSel('crank', 'Kurbel', r.crank, [['50/34', '50/34'], ['52/36', '52/36'], ['custom', 'Eigene …']], { g: 'rider', wide: true })}
+          ${fNum('crankCustom', 'Kettenblätter (eigene)', '', r.crankCustom, { g: 'rider', ph: 'z. B. 53/39' })}
+          ${fSel('cassette', 'Kassette', r.cassette, [['11-34', '11-34 (12-fach)'], ['11-36', '11-36 (12-fach)'], ['custom', 'Eigene …']], { g: 'rider', wide: true })}
+          ${fNum('cassetteCustom', 'Ritzel (eigene)', '', r.cassetteCustom, { g: 'rider', ph: '11,12,13,…' })}
+          ${fNum('tireMm', 'Reifenbreite', 'mm', r.tireMm, { g: 'rider' })}
+          ${fNum('circMm', 'Abrollumfang', 'mm', r.circMm, { g: 'rider', ph: 'auto' })}
+          ${fNum('cadFlat', 'Wunsch-TF flach', 'U/min', r.cadFlat, { g: 'rider' })}
+          ${fNum('cadClimb', 'Wunsch-TF ab 8 %', 'U/min', r.cadClimb, { g: 'rider' })}
+          ${fNum('cadMax', 'Max. Trittfrequenz', 'U/min', r.cadMax, { g: 'rider', hint: 'bestimmt, ab wann bergab gerollt wird' })}
+        </div>
+        <p class="hint" style="margin-top:10px">Ritzel 105 laut Shimano: 11-34 = 11-12-13-14-15-17-19-21-24-27-30-34, 11-36 = 11-12-13-14-15-17-19-21-24-28-32-36. Abrollumfang leer = aus Reifenbreite geschätzt (π × (622 + 2 × Breite)). Referenz: Profis fuhren im Rennen ca. 89–92 U/min in Ebene und Zeitfahren und ca. 71 U/min an Pässen (Lucía et al. 2001).</p>
+      </div>`;
+    const v = $('#v-rider');
+    v.addEventListener('input', onField);
+    v.addEventListener('change', onField);
+    $('#cp-go').addEventListener('click', runCP);
+    $('#cal-go').addEventListener('click', runCal);
+    syncRiderDisabled();
+  }
+
+  function syncRiderDisabled() {
+    const r = S.rider;
+    const set = (id, off) => { const el = $('#' + id); if (el) { el.disabled = off; el.closest('.field').style.opacity = off ? .5 : 1; } };
+    set('crankCustom', r.crank !== 'custom');
+    set('cassetteCustom', r.cassette !== 'custom');
+    const circ = $('#circMm');
+    if (circ) circ.placeholder = `auto: ${nf(Math.PI * (622 + 2 * (num(r.tireMm) || 28)))}`;
+  }
+
+  function onField(ev) {
+    const el = ev.target;
+    if (!el.dataset || !el.dataset.g || el.dataset.g === 'calc' || el.dataset.g === 'time' || el.dataset.g === 'undefined') return;
+    const g = el.dataset.g, k = el.dataset.k;
+    const obj = g === 'rider' ? S.rider : S.race;
+    let val = el.value;
+    if (el.tagName !== 'SELECT' && el.type !== 'time') val = val.trim();
+    obj[k] = val;
+    if (g === 'rider') {
+      if (k === 'position' && POSITIONS[val][1]) { obj.cda = POSITIONS[val][1]; $('#cda').value = String(obj.cda).replace('.', ','); }
+      if (k === 'cda') obj.position = Object.keys(POSITIONS).find(p => POSITIONS[p][1] === num(val)) || 'custom', $('#position').value = obj.position;
+      if (k === 'crrPreset' && CRR[val][1]) { obj.crr = CRR[val][1]; $('#crr').value = String(obj.crr).replace('.', ','); }
+      if (k === 'crr') { obj.crrPreset = Object.keys(CRR).find(p => CRR[p][1] === num(val)) || 'custom'; $('#crrPreset').value = obj.crrPreset; }
+      if (obj.example && ['ftp', 'riderKg', 'cp', 'wprime'].includes(k)) { obj.example = false; const n = $('#ex-note'); if (n) n.remove(); }
+      syncRiderDisabled();
+    }
+    persist();
+    if (ev.type === 'change' || el.tagName === 'SELECT' || el.type === 'range' || num(val) !== null || val === '') schedule();
+  }
+
+  function runCP() {
+    const eff = [0, 1, 2, 3].map(i => ({ t: (num($('#cpT' + i).value) || 0) * 60, p: num($('#cpP' + i).value) || 0 }));
+    const res = E.fitCP(eff);
+    const out = $('#cp-out');
+    if (!res) { out.innerHTML = 'Bitte mindestens zwei Dauern mit Leistung eintragen.'; return; }
+    out.innerHTML = `<b>CP ${nf(res.cp)} W · W' ${nf(res.wp / 1000, 1)} kJ</b> · R² ${nf(res.r2, 3)} ${res.warnings.map(w => `<div class="hint">${esc(w)}</div>`).join('')}
+      ${res.wp > 0 ? `<div style="margin-top:8px"><button class="btn small ghost" type="button" id="cp-take">Werte übernehmen</button></div>` : ''}`;
+    const take = $('#cp-take');
+    if (take) take.addEventListener('click', () => {
+      S.rider.cp = Math.round(res.cp); S.rider.wprime = Math.round(res.wp / 100) / 10; S.rider.example = false;
+      $('#cp').value = S.rider.cp; $('#wprime').value = String(S.rider.wprime).replace('.', ',');
+      persist(); schedule(); toast("CP und W' übernommen");
+    });
+  }
+  function runCal() {
+    const p = params();
+    const P = num($('#calP').value), V = num($('#calV').value);
+    const out = $('#cal-out');
+    if (!P || !V) { out.textContent = 'Bitte Leistung und Tempo eintragen.'; return; }
+    const cda = E.cdaFromRide(P, V, p.riderKg + p.bikeKg + p.extraKg, p.crr, 0.976, num($('#calE').value) || 0, num($('#calT').value) ?? 18);
+    if (!(cda > 0.12 && cda < 0.8)) { out.textContent = `Ergebnis ${nf(cda, 3)} m² ist unplausibel – prüfe Werte und Bedingungen (Wind, Steigung).`; return; }
+    out.innerHTML = `<b>CdA ${nf(cda, 3)} m²</b> <button class="btn small ghost" type="button" id="cal-take" style="margin-left:8px">Übernehmen</button>`;
+    $('#cal-take').addEventListener('click', () => {
+      S.rider.cda = Math.round(cda * 1000) / 1000; S.rider.position = 'custom';
+      $('#cda').value = String(S.rider.cda).replace('.', ','); $('#position').value = 'custom';
+      persist(); schedule(); toast('CdA übernommen');
+    });
+  }
+
+  /* ------------------------------------------------ Plan-Steuerung */
+  const IF_BANDS = [
+    [0.55, 0.75, 'Erholung', 'unter 0,75: Erholungsfahrten', 'Erholung'],
+    [0.75, 0.85, 'Grundlage', '0,75–0,85: Grundlagenfahrten', 'GA'],
+    [0.85, 0.95, 'Tempo', '0,85–0,95: Tempofahrten, längere Straßenrennen (über 2,5 h)', 'Tempo'],
+    [0.95, 1.05, 'Schwelle', '0,95–1,05: kürzere Straßenrennen (unter 2,5 h), längere Zeitfahren (ca. 40 km)', 'Schw.'],
+    [1.05, 1.15, 'ZF kurz', '1,05–1,15: kürzere Zeitfahren (ca. 15 km)', 'ZF'],
+  ];
+  const bandOf = iff => iff < 0.75 ? IF_BANDS[0] : iff < 0.85 ? IF_BANDS[1] : iff < 0.95 ? IF_BANDS[2] : iff < 1.05 ? IF_BANDS[3] : iff <= 1.15 ? IF_BANDS[4] : [1.15, 2, 'sehr hart', 'über 1,15: Prolog, Bahnverfolgung'];
+  const INT_MODES = [['if', 'Intensität (IF)'], ['np', 'Watt (NP)'], ['time', 'Zielzeit']];
+  let solveInfo = null;
+
+  function buildPlanControls() {
+    const c = S.race;
+    const tt = c.targetTime || '';
+    const [th, tm] = tt.split(':');
+    $('#v-plan').innerHTML = `
+      <div class="glass card" id="controls">
+        <div class="step"><span class="stepno">1</span><div class="stepbody">
+          <div class="lbl">Art der Fahrt</div>
+          <div class="seg" role="group" aria-label="Fahrtart" id="type-seg">
+            ${Object.entries(E.TYPE_INFO).map(([k, v]) => `<button type="button" data-type="${k}" aria-pressed="${c.type === k}">${esc(v.label.split(' / ')[0])}</button>`).join('')}
+          </div>
+          <div class="hint">Setzt einen Startwert für die Intensität, den du in Schritt 2 anpasst.</div>
+        </div></div>
+
+        <div class="step"><span class="stepno">2</span><div class="stepbody">
+          <div class="lbl">Wie hart soll die ganze Fahrt sein?</div>
+          <div class="seg small" role="group" aria-label="Eingabe der Intensität" id="int-seg">
+            ${INT_MODES.map(([k, t]) => `<button type="button" data-mode="${k}" aria-pressed="${c.intMode === k}">${t}</button>`).join('')}
+          </div>
+          <div class="intin" data-for="if">
+            <div class="range"><div class="row"><label class="lbl" for="ifTarget">Intensitätsfaktor IF</label><output id="if-out"></output></div>
+            <input type="range" id="ifTarget" data-g="race" data-k="ifTarget" min="0.55" max="1.15" step="0.01" value="${c.ifTarget}"></div>
+          </div>
+          <div class="intin" data-for="np">
+            <div class="fields">${fNum('targetNP', 'Ziel-Normalized-Power', 'W', c.targetNP || Math.round((num(c.ifTarget) || 0.8) * (num(S.rider.ftp) || 250)), { g: 'race', hint: 'z. B. die NP einer vergleichbaren eigenen Fahrt' })}</div>
+          </div>
+          <div class="intin" data-for="time">
+            <div class="fields">
+              ${fNum('ttH', 'Zielzeit Stunden', 'h', th || '', { g: 'time', ph: '3' })}
+              ${fNum('ttM', 'Minuten', 'min', tm || '', { g: 'time', ph: '45' })}
+            </div>
+            <div class="hint" id="time-info">Die App sucht den IF, mit dem du laut Modell in dieser Zeit ankommst.</div>
+          </div>
+          <div class="ifscale" aria-hidden="true">
+            <div class="bands">${IF_BANDS.map(b => `<span style="flex:${Math.round((b[1] - b[0]) * 100)}"><i class="l">${b[2]}</i><i class="s">${b[4]}</i></span>`).join('')}</div>
+            <div class="marker" id="if-marker"></div>
+            <div class="ticks">${[0.55, 0.75, 0.85, 0.95, 1.05, 1.15].map(t => `<span style="left:${(t - 0.55) / 0.6 * 100}%">${nf(t, 2)}</span>`).join('')}</div>
+          </div>
+          <div class="live" id="int-live"><span class="spinner"></span></div>
+        </div></div>
+
+        <div class="step"><span class="stepno">3</span><div class="stepbody">
+          <div class="range">
+            <div class="row"><label class="lbl" for="variability">Berg vs. Flach (Pacing-Spanne)</label><output id="var-out"></output></div>
+            <input type="range" id="variability" data-g="race" data-k="variability" min="0" max="20" step="1" value="${c.variability}">
+            <div class="hint" id="var-live"></div>
+            <div class="hint">0 % = konstante Leistung. Modelliert sind ±10 % (Atkinson et al. 2007); +5 % bergauf wurden im Labor überwiegend toleriert.</div>
+          </div>
+        </div></div>
+
+        <details class="more" id="int-help"${S.helpOpen === false ? '' : ' open'}><summary>So stellst du die Intensität ein</summary><div class="explain">
+          <p><b>Was du einstellst:</b> wie hart die ganze Fahrt wird. Die App misst das mit der <b>Normalized Power (NP)</b>: einer Leistung, die schwankende Watt so gewichtet, wie sie dich belasten. Wer bergauf mehr und bergab weniger tritt, hat deshalb eine höhere NP als Durchschnittsleistung.</p>
+          <p><b>Intensitätsfaktor:</b> IF = NP ÷ FTP. Beispiel: IF 0,80 bei FTP 250 W bedeutet NP 200 W. Deine FTP ist die Leistung, die du ungefähr eine Stunde halten kannst – je länger die Fahrt, desto niedriger muss der IF sein.</p>
+          <p><b>Was die App daraus macht:</b> Sie verteilt die Leistung auf die Abschnitte – mehr am Berg, weniger im Flachen und bergab – so, dass die NP der ganzen Fahrt genau dein Ziel trifft. Wie groß der Unterschied sein darf, legst du in Schritt 3 fest.</p>
+          <p><b>Drei Wege zum selben Ziel:</b> IF direkt, Ziel-Watt (NP) oder Zielzeit. Bei Watt und Zielzeit rechnet die App den passenden IF aus.</p>
+          <p><b>So findest du deinen Wert:</b></p>
+          <ol>
+            <li>Fahrtart wählen – das setzt einen Startwert innerhalb der typischen Bereiche nach Coggan (Skala oben).</li>
+            <li>Mit einer eigenen Fahrt vergleichen: ähnliche Dauer, ähnliches Profil, am Ende noch gut gefahren. Deren NP geteilt durch deine damalige FTP ist ein guter Startwert. NP und IF zeigen z. B. TrainingPeaks und Garmin Connect; Strava zeigt eine ähnliche „gewichtete Durchschnittsleistung“.</li>
+            <li>Ergebnis prüfen: Passen die Watt am längsten Anstieg und die Fahrzeit zu dem, was du dir zutraust? Wenn nicht, den IF in kleinen Schritten (0,01–0,02) ändern.</li>
+          </ol>
+        </div></details>
+
+        <details class="more"><summary>Start, Wetter & Verpflegung</summary><div>
+          <div class="fields">
+            <div class="field"><label for="startTime">Startzeit</label><div class="inp"><input type="time" id="startTime" data-g="race" data-k="startTime" value="${esc(c.startTime)}"></div></div>
+            ${fNum('temp', 'Temperatur', '°C', c.temp, { g: 'race' })}
+            ${fNum('windSpeed', 'Wind', 'km/h', c.windSpeed, { g: 'race' })}
+            ${fSel('windFrom', 'Wind aus', c.windFrom, WIND.map(([t, d]) => [d, t]), { g: 'race' })}
+            ${fNum('vmaxDown', 'Höchstgeschw. bergab', 'km/h', c.vmaxDown, { g: 'race', hint: 'deine Einschätzung (Kurven, Belag)' })}
+            ${fSel('carbGph', 'Kohlenhydrate', c.carbGph, [['', 'Empfehlung nach Dauer'], ['0', 'keine'], ['30', '30 g/h'], ['45', '45 g/h'], ['60', '60 g/h'], ['75', '75 g/h'], ['90', '90 g/h']], { g: 'race' })}
+            ${fSel('fuelEveryMin', 'Verpflegung alle', c.fuelEveryMin, [['15', '15 min'], ['20', '20 min'], ['30', '30 min']], { g: 'race' })}
+          </div>
+        </div></details>
+      </div>
+      <div id="plan-out" class="view"></div>`;
+    const v = $('#controls');
+    v.addEventListener('input', onField);
+    v.addEventListener('change', onField);
+    v.addEventListener('input', syncControls);
+    $('#int-help').addEventListener('toggle', e => { S.helpOpen = e.target.open; persist(); });
+    $$('#type-seg button').forEach(b => b.addEventListener('click', () => {
+      S.race.type = b.dataset.type;
+      $$('#type-seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+      const T = PLAN ? PLAN.summary.T : 3 * 3600;
+      S.race.ifTarget = E.suggestIF(S.race.type, T);
+      $('#ifTarget').value = S.race.ifTarget;
+      if (S.race.intMode === 'np') { S.race.intMode = 'if'; }
+      if (S.race.intMode !== 'time') setIntMode(S.race.intMode);
+      persist(); syncControls(); schedule();
+    }));
+    $$('#int-seg button').forEach(b => b.addEventListener('click', () => setIntMode(b.dataset.mode, true)));
+    ['ttH', 'ttM'].forEach(id => $('#' + id).addEventListener('change', () => {
+      const h = Math.max(0, Math.round(num($('#ttH').value) || 0)), m = Math.max(0, Math.min(59, Math.round(num($('#ttM').value) || 0)));
+      S.race.targetTime = (h || m) ? `${h}:${String(m).padStart(2, '0')}` : '';
+      persist(); schedule();
+    }));
+    setIntMode(c.intMode || 'if');
+    syncControls();
+  }
+
+  function setIntMode(mode, user) {
+    const c = S.race, ftp = num(S.rider.ftp) || 250;
+    if (user && PLAN) {
+      // aktuellen Stand in den neuen Eingabeweg übernehmen
+      const iff = PLAN.summary.ifTarget;
+      if (mode === 'if') { c.ifTarget = Math.round(iff * 100) / 100; $('#ifTarget').value = c.ifTarget; }
+      if (mode === 'np') { c.targetNP = Math.round(iff * ftp); $('#targetNP').value = c.targetNP; }
+      if (mode === 'time' && !c.targetTime) {
+        const m = Math.round(PLAN.summary.T / 60);
+        c.targetTime = `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+        $('#ttH').value = Math.floor(m / 60); $('#ttM').value = m % 60;
+      }
+    }
+    c.intMode = mode;
+    $$('#int-seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === mode)));
+    $$('.intin').forEach(el => { el.hidden = el.dataset.for !== mode; });
+    persist();
+    if (user) { syncControls(); schedule(); }
+  }
+
+  function syncControls() {
+    const c = S.race;
+    const iff = num(c.ifTarget) || 0.8;
+    const pct = (x, a, b) => `${Math.max(0, Math.min(100, (x - a) / (b - a) * 100))}%`;
+    $('#if-out').textContent = nf(iff, 2);
+    $('#ifTarget').style.setProperty('--p', pct(iff, 0.55, 1.15));
+    $('#variability').style.setProperty('--p', pct(num(c.variability) || 0, 0, 20));
+    $('#var-out').textContent = `±${nf(num(c.variability) || 0)} %`;
+  }
+
+  // Ziel-IF für eine Zielzeit per Bisektion (Fahrzeit sinkt mit steigendem IF)
+  function solveIF(route, base, targetSec) {
+    const run = iff => E.plan(route, Object.assign({}, base, { ifTarget: iff, fast: true }));
+    let lo = 0.45, hi = 1.25;
+    const rLo = run(lo);
+    if (rLo.summary.T <= targetSec) return { iff: lo, status: 'slow', T: rLo.summary.T };
+    const rHi = run(hi);
+    if (rHi.summary.T > targetSec) return { iff: rHi.summary.ifTarget, status: 'fast', T: rHi.summary.T, wLimited: rHi.summary.ifTarget < hi - 1e-6 };
+    for (let i = 0; i < 10; i++) {
+      const m = (lo + hi) / 2;
+      if (run(m).summary.T > targetSec) lo = m; else hi = m;
+    }
+    return { iff: Math.round(hi * 1000) / 1000, status: 'ok' };
+  }
+
+  function updateIntensityReadout() {
+    const r = PLAN, s = r.summary, c = S.race, ftp = r.params.ftp;
+    const ped = r.sections.filter(x => !x.coasting);
+    const tw = arr => { let a = 0, t = 0; arr.forEach(x => { a += x.target * x.dur; t += x.dur; }); return t ? a / t : null; };
+    const up = tw(ped.filter(x => x.cls === 'up')), fl = tw(ped.filter(x => x.cls === 'flat'));
+    const band = bandOf(s.IF);
+    const mk = $('#if-marker');
+    mk.style.left = `${Math.max(0, Math.min(100, (s.IF - 0.55) / 0.6 * 100))}%`;
+    const warn = [];
+    const h = s.T / 3600;
+    if ((h > 2.5 && s.IF > 0.95) || (h > 1.25 && s.IF > 1.05)) warn.push(`Für ${fmtDur(s.T)} liegt IF ${nf(s.IF, 2)} über den typischen Werten nach Coggan.`);
+    if (c.intMode === 'time' && solveInfo) {
+      if (solveInfo.status === 'slow') warn.push(`Für diese Zielzeit reicht schon IF 0,45 – wähle eine kürzere Zeit. Angezeigt wird der Plan mit IF ${nf(s.IF, 2)}.`);
+      if (solveInfo.status === 'fast') warn.push(`Diese Zielzeit ist mit deinen Werten nicht erreichbar: Selbst mit IF ${nf(solveInfo.iff, 2)} dauert die Fahrt laut Modell ${fmtDur(solveInfo.T)}${solveInfo.wLimited ? " (begrenzt durch deine W'-Reserve)" : ''}. Angezeigt wird der Plan mit IF ${nf(s.IF, 2)}.`);
+    }
+    if (c.intMode === 'time' && !c.targetTime) warn.push('Trage eine Zielzeit ein.');
+    r.adjust.forEach(a => warn.push(a));
+    $('#int-live').innerHTML = `
+      <div class="livegrid">
+        <div><span class="k">IF</span><b>${nf(s.IF, 2)}</b></div>
+        <div><span class="k">Ziel-NP</span><b>${nf(s.NP)} W</b><span class="s">${nf(s.IF * 100)} % von FTP ${nf(ftp)} W</span></div>
+        <div><span class="k">Fahrzeit</span><b>${fmtDur(s.T)}</b></div>
+        <div><span class="k">Anstiege</span><b>${up ? '~' + nf(up) + ' W' : '–'}</b></div>
+        <div><span class="k">Flach</span><b>${fl ? '~' + nf(fl) + ' W' : '–'}</b></div>
+      </div>
+      <p class="small"><b>${esc(band[2])}</b> · Coggan: ${esc(band[3])}.</p>
+      ${warn.map(w => `<p class="note warn small">${esc(w)}</p>`).join('')}`;
+    if (c.intMode !== 'if') { $('#ifTarget').value = s.ifTarget; syncControls(); }
+    $('#var-live').textContent = up && fl ? `Ergebnis: Anstiege ${nf(up)} W (${up >= s.NP ? '+' : '−'}${nf(Math.abs(up / s.NP - 1) * 100)} % zur NP), Flach ${nf(fl)} W (${fl >= s.NP ? '+' : '−'}${nf(Math.abs(fl / s.NP - 1) * 100)} %).` : '';
+  }
+
+  /* ------------------------------------------------------ Diagramme */
+  function zoneVar(z) { return `var(--z${z})`; }
+
+  function stackedChart(el, r) {
+    const route = r.route, sim = r.sim, D = route.D;
+    const Wd = Math.max(300, Math.round(el.clientWidth || 640));
+    const L = 44, Rm = 10, gap = 26, top = 20;
+    const panels = [{ k: 'ele', h: Wd < 500 ? 130 : 170, t: 'Höhe (m) · Fläche = Ziel-Leistungszone' }, { k: 'pow', h: 96, t: 'Ziel-Leistung (W) · gestrichelt FTP' }, { k: 'spd', h: 70, t: 'Geschwindigkeit (km/h)' }];
+    if (r.wStep) panels.push({ k: 'wb', h: 70, t: "W'-Bilanz (kJ) · gestrichelt Reserve" });
+    let y = top;
+    panels.forEach(p => { p.y = y; y += p.h + gap; });
+    const H = y - gap + 26;
+    const iw = Wd - L - Rm;
+    const X = d => L + d / D * iw;
+    const step = Math.max(1, Math.floor(route.N / Math.min(900, iw * 1.5)));
+    const ticks = (lo, hi, n) => { const span = hi - lo || 1, raw = span / n, mag = Math.pow(10, Math.floor(Math.log10(raw))); const st = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= n) || mag * 10; const out = []; for (let t = Math.ceil(lo / st) * st; t <= hi + 1e-9; t += st) out.push(Math.round(t * 100) / 100); return out; };
+    let s = `<svg viewBox="0 0 ${Wd} ${H}" role="img" aria-label="Höhenprofil, Ziel-Leistung, Geschwindigkeit${r.wStep ? " und W'-Bilanz" : ''} über die Strecke">`;
+    const sel = S.selected !== null ? r.sections[S.selected] : null;
+    panels.forEach(p => {
+      s += `<text class="chart-label" x="${L}" y="${p.y - 7}">${esc(p.t)}</text>`;
+      if (sel) s += `<rect x="${X(sel.kmStart * 1000)}" y="${p.y}" width="${Math.max(2, X(sel.kmEnd * 1000) - X(sel.kmStart * 1000))}" height="${p.h}" style="fill:var(--accent-soft)"/>`;
+      let lo, hi, fmt = v => nf(v);
+      if (p.k === 'ele') { lo = Math.floor(route.minEle / 50) * 50; hi = Math.ceil((route.maxEle + (route.maxEle - route.minEle) * 0.12) / 50) * 50; }
+      if (p.k === 'pow') { lo = 0; hi = Math.ceil(Math.max(r.params.ftp * 1.1, ...r.sections.map(x => x.target)) / 50) * 50; }
+      if (p.k === 'spd') { lo = 0; let mx = 0; for (let i = 0; i < route.N; i++) mx = Math.max(mx, sim.v[i]); hi = Math.ceil(mx * 3.6 / 10) * 10; }
+      if (p.k === 'wb') { lo = 0; hi = r.params.wprime / 1000; fmt = v => nf(v, v % 1 ? 1 : 0); }
+      p.Y = v => p.y + p.h - (v - lo) / (hi - lo) * p.h;
+      ticks(lo, hi, p.k === 'ele' ? 4 : 3).forEach(t => {
+        s += `<line x1="${L}" x2="${L + iw}" y1="${p.Y(t)}" y2="${p.Y(t)}" style="stroke:var(--grid)" stroke-width="1"/>`;
+        s += `<text class="axis-text" x="${L - 6}" y="${p.Y(t) + 4}" text-anchor="end">${fmt(t)}</text>`;
+      });
+      if (p.k === 'ele') {
+        r.sections.forEach(sc => {
+          let d = `M${X(route.x[sc.i0])},${p.y + p.h}`;
+          for (let i = sc.i0; i <= sc.i1; i += step) d += `L${X(route.x[i]).toFixed(1)},${p.Y(route.ele[i]).toFixed(1)}`;
+          d += `L${X(route.x[sc.i1]).toFixed(1)},${p.Y(route.ele[sc.i1]).toFixed(1)}L${X(route.x[sc.i1]).toFixed(1)},${p.y + p.h}Z`;
+          s += `<path d="${d}" style="fill:${sc.coasting ? 'var(--roll)' : zoneVar(sc.zone)}"/>`;
+        });
+        let d = '';
+        for (let i = 0; i < route.N; i += step) d += `${d ? 'L' : 'M'}${X(route.x[i]).toFixed(1)},${p.Y(route.ele[i]).toFixed(1)}`;
+        d += `L${X(D).toFixed(1)},${p.Y(route.ele[route.N - 1]).toFixed(1)}`;
+        s += `<path d="${d}" style="fill:none;stroke:var(--fg)" stroke-width="1.6" stroke-linejoin="round"/>`;
+        r.climbs.forEach(c => { s += `<text class="climb-num" x="${X(c.kmEnd * 1000)}" y="${p.Y(c.eleEnd) - 6}" text-anchor="middle">${c.no}</text>`; });
+        r.fuel.markers.forEach(m => { s += `<circle cx="${X(m.km * 1000)}" cy="${p.y + p.h - 5}" r="3.5" style="fill:var(--accent);stroke:var(--glass-strong)" stroke-width="1.5"/>`; });
+      }
+      if (p.k === 'pow') {
+        r.sections.forEach(sc => {
+          const x0 = X(sc.kmStart * 1000), x1 = X(sc.kmEnd * 1000), w = Math.max(1, x1 - x0 - 2);
+          if (sc.coasting) { s += `<rect x="${x0 + 1}" y="${p.y + p.h - 4}" width="${w}" height="4" rx="2" style="fill:var(--roll)"/>`; return; }
+          const yy = p.Y(sc.target), hh = p.y + p.h - yy;
+          s += `<path d="M${x0 + 1},${p.y + p.h}V${yy + Math.min(3, hh)}q0,-3 3,-3H${x0 + 1 + w - 3}q3,0 3,3V${p.y + p.h}Z" style="fill:${zoneVar(sc.zone)}"/>`;
+        });
+        s += `<line x1="${L}" x2="${L + iw}" y1="${p.Y(r.params.ftp)}" y2="${p.Y(r.params.ftp)}" style="stroke:var(--fg)" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+        s += `<text class="axis-text" x="${L + iw}" y="${p.Y(r.params.ftp) - 4}" text-anchor="end">FTP ${nf(r.params.ftp)}</text>`;
+      }
+      if (p.k === 'spd') {
+        let d = '';
+        for (let i = 0; i < route.N; i += step) d += `${d ? 'L' : 'M'}${X(route.x[i]).toFixed(1)},${p.Y(sim.v[i] * 3.6).toFixed(1)}`;
+        s += `<path d="${d}" style="fill:none;stroke:var(--fg2)" stroke-width="1.6" stroke-linejoin="round"/>`;
+      }
+      if (p.k === 'wb') {
+        let d = '';
+        for (let i = 0; i < route.N; i += step) d += `${d ? 'L' : 'M'}${X(route.x[i]).toFixed(1)},${p.Y(r.wStep[i] / 1000).toFixed(1)}`;
+        s += `<path d="${d}" style="fill:none;stroke:var(--accent)" stroke-width="2" stroke-linejoin="round"/>`;
+        const rv = r.params.wprime * r.params.wReserve / 1000;
+        s += `<line x1="${L}" x2="${L + iw}" y1="${p.Y(rv)}" y2="${p.Y(rv)}" style="stroke:var(--fg2)" stroke-width="1.2" stroke-dasharray="5 4"/>`;
+      }
+    });
+    const last = panels[panels.length - 1];
+    ticks(0, D / 1000, Wd < 500 ? 5 : 10).forEach(k => { s += `<text class="axis-text" x="${X(k * 1000)}" y="${last.y + last.h + 16}" text-anchor="middle">${nf(k)}</text>`; });
+    s += `<text class="axis-text" x="${L + iw}" y="${last.y + last.h + 30}" text-anchor="end">km</text>`;
+    s += `<line id="xh" x1="0" x2="0" y1="${top - 4}" y2="${last.y + last.h}" style="stroke:var(--fg)" stroke-width="1" visibility="hidden"/>`;
+    panels.forEach(p => { s += `<circle class="xh-dot" data-k="${p.k}" r="4" cx="0" cy="0" style="fill:var(--glass-strong);stroke:var(--fg)" stroke-width="1.5" visibility="hidden"/>`; });
+    s += `<rect x="${L}" y="${top - 4}" width="${iw}" height="${last.y + last.h - top + 4}" fill="transparent" id="hit"/>`;
+    s += '</svg>';
+    el.innerHTML = s + '<div class="tip" id="tip" hidden></div>';
+    // Interaktion
+    const svg = el.querySelector('svg'), tip = el.querySelector('#tip'), xh = el.querySelector('#xh');
+    const show = ev => {
+      const rect = svg.getBoundingClientRect();
+      const sx = (ev.clientX - rect.left) * (Wd / rect.width);
+      const d = Math.max(0, Math.min(D, (sx - L) / iw * D));
+      const i = Math.min(route.N - 1, Math.round(d / E.STEP));
+      const xs = X(route.x[i]);
+      xh.setAttribute('x1', xs); xh.setAttribute('x2', xs); xh.setAttribute('visibility', 'visible');
+      const sc = r.sections[route.secOfStep[Math.min(i, route.N - 2)]];
+      panels.forEach(p => {
+        const dot = svg.querySelector(`.xh-dot[data-k="${p.k}"]`);
+        const v = p.k === 'ele' ? route.ele[i] : p.k === 'pow' ? (sc.coasting ? 0 : sc.target) : p.k === 'spd' ? sim.v[i] * 3.6 : r.wStep[i] / 1000;
+        dot.setAttribute('cx', xs); dot.setAttribute('cy', p.Y(v)); dot.setAttribute('visibility', 'visible');
+      });
+      const g = route.grade[Math.min(i, route.N - 2)] * 100;
+      tip.innerHTML = `<b>km ${nf(route.x[i] / 1000, 1)}</b>
+        <div class="tr"><span>Höhe</span><span>${nf(route.ele[i])} m</span></div>
+        <div class="tr"><span>Steigung</span><span>${nf(g, 1)} %</span></div>
+        <div class="tr"><span>Ziel</span><span>${sc.coasting ? 'rollen' : `${sc.target} W · Z${sc.zone}`}</span></div>
+        <div class="tr"><span>Tempo</span><span>${nf(sim.v[i] * 3.6, 1)} km/h</span></div>
+        <div class="tr"><span>Fahrzeit</span><span>${fmtDur(sim.t[i])}</span></div>
+        ${r.wStep ? `<div class="tr"><span>W'</span><span>${nf(r.wStep[i] / 1000, 1)} kJ</span></div>` : ''}`;
+      tip.hidden = false;
+      const px = xs / Wd * rect.width;
+      const tw = tip.offsetWidth;
+      tip.style.left = (px + 14 + tw > rect.width ? px - tw - 14 : px + 14) + 'px';
+      tip.style.top = '24px';
+    };
+    const hide = () => { tip.hidden = true; xh.setAttribute('visibility', 'hidden'); svg.querySelectorAll('.xh-dot').forEach(d => d.setAttribute('visibility', 'hidden')); };
+    svg.addEventListener('pointermove', show);
+    svg.addEventListener('pointerdown', show);
+    svg.addEventListener('pointerleave', hide);
+    svg.addEventListener('pointercancel', hide);
+  }
+
+  function outlineSVG(r, W, H) {
+    const route = r.route;
+    const lat0 = route.lat[0], k = Math.cos(lat0 * Math.PI / 180);
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    const P = [];
+    const step = Math.max(1, Math.floor(route.N / 700));
+    for (let i = 0; i < route.N; i += step) {
+      const x = route.lon[i] * k, y = -route.lat[i];
+      P.push([i, x, y]);
+      minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+    }
+    const pad = 14, sc = Math.min((W - 2 * pad) / (maxX - minX || 1), (H - 2 * pad) / (maxY - minY || 1));
+    const ox = (W - (maxX - minX) * sc) / 2, oy = (H - (maxY - minY) * sc) / 2;
+    const px = x => (ox + (x - minX) * sc).toFixed(1), py = y => (oy + (y - minY) * sc).toFixed(1);
+    let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Streckenverlauf, eingefärbt nach Ziel-Leistungszone">`;
+    let all = '';
+    P.forEach(([, x, y], j) => { all += `${j ? 'L' : 'M'}${px(x)},${py(y)}`; });
+    s += `<path d="${all}" style="fill:none;stroke:var(--glass-strong)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>`;
+    r.sections.forEach(scn => {
+      let d = '';
+      P.filter(p => p[0] >= scn.i0 - step && p[0] <= scn.i1 + step).forEach(([, x, y], j) => { d += `${j ? 'L' : 'M'}${px(x)},${py(y)}`; });
+      s += `<path d="${d}" style="fill:none;stroke:${scn.coasting ? 'var(--roll)' : zoneVar(scn.zone)}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;
+    });
+    const a = P[0], b = P[P.length - 1];
+    s += `<circle cx="${px(a[1])}" cy="${py(a[2])}" r="6" style="fill:var(--accent);stroke:var(--glass-strong)" stroke-width="2.5"/>`;
+    s += `<rect x="${+px(b[1]) - 4.5}" y="${+py(b[2]) - 4.5}" width="9" height="9" style="fill:var(--fg);stroke:var(--glass-strong)" stroke-width="2"/>`;
+    return s + '</svg>';
+  }
+
+  function climbSpark(r, c) {
+    const route = r.route, W = 260, H = 54;
+    let mn = Infinity, mx = -Infinity;
+    for (let i = c.i0; i <= c.i1; i++) { mn = Math.min(mn, route.ele[i]); mx = Math.max(mx, route.ele[i]); }
+    const X = i => (route.x[i] - route.x[c.i0]) / (route.x[c.i1] - route.x[c.i0]) * W, Y = e => H - 3 - (e - mn) / ((mx - mn) || 1) * (H - 8);
+    let d = `M0,${H}`;
+    const st = Math.max(1, Math.floor((c.i1 - c.i0) / 120));
+    for (let i = c.i0; i <= c.i1; i += st) d += `L${X(i).toFixed(1)},${Y(route.ele[i]).toFixed(1)}`;
+    d += `L${W},${Y(route.ele[c.i1]).toFixed(1)}L${W},${H}Z`;
+    return `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true"><path d="${d}" style="fill:${zoneVar(c.zone)}"/></svg>`;
+  }
+
+  /* ------------------------------------------------------ Plan-Ansicht */
+  function renderPlan() {
+    const r = PLAN, s = r.summary, out = $('#plan-out');
+    const strat = E.strategy(r);
+    const notes = r.notes.map(n => `<div class="note">${esc(n)}</div>`).join('');
+    const Tz = r.zones.reduce((a, z) => a + z.s, 0) || 1, maxZ = Math.max(...r.zones.map(z => z.s), 1);
+    out.innerHTML = `
+      <div class="glass card">
+        <div class="kpis">
+          <div class="kpi hero"><div class="k">Fahrzeit</div><div class="v">${fmtDur(s.T).replace(' h', '').replace(' min', '')}<small>${s.T >= 3600 ? 'h' : 'min'}</small></div></div>
+          <div class="kpi"><div class="k">Ø Tempo</div><div class="v">${nf(s.avgSpeed, 1)}<small>km/h</small></div></div>
+          <div class="kpi"><div class="k">Normalized Power</div><div class="v">${nf(s.NP)}<small>W</small></div></div>
+          <div class="kpi"><div class="k">Ø Leistung</div><div class="v">${nf(s.avgP)}<small>W</small></div></div>
+          <div class="kpi"><div class="k">IF · TSS</div><div class="v">${nf(s.IF, 2)}<small>· ${nf(s.TSS)}</small></div></div>
+          <div class="kpi"><div class="k">Arbeit</div><div class="v">${nf(s.kJ)}<small>kJ</small></div></div>
+          <div class="kpi"><div class="k">Ankunft</div><div class="v">${clock(s.endMin)}<small>Uhr</small></div></div>
+          <div class="kpi"><div class="k">Kohlenhydrate</div><div class="v">${r.fuel.gph ? nf(r.fuel.total) : '–'}<small>${r.fuel.gph ? 'g' : ''}</small></div></div>
+        </div>
+      </div>
+      <div class="glass card">
+        <div class="section-title"><h2>So fährst du die Strecke</h2><span class="hint">berechnet in ${nf(lastMs)} ms</span></div>
+        <ul class="strat">${strat.map(x => `<li><span class="k">${esc(x.k)}</span><span>${esc(x.t)}</span></li>`).join('')}</ul>
+        ${notes ? `<div style="display:grid;gap:8px;margin-top:14px">${notes}</div>` : ''}
+      </div>
+      <div class="glass card">
+        <div class="section-title"><h2>Profil & Vorgaben</h2><span class="hint">Tippen oder ziehen für Details</span></div>
+        <div class="chartwrap" id="chart"></div>
+        <div class="legend">${E.ZONES.map(z => `<span><i style="background:${zoneVar(z.z)}"></i>${esc(z.name)}</span>`).join('')}<span><i style="background:var(--roll)"></i>rollen</span><span><i style="background:var(--accent);border-radius:50%"></i>Verpflegung</span></div>
+      </div>
+      <div class="glass card">
+        <div class="section-title"><h2>Abschnitte</h2><span class="hint">Zeile antippen markiert den Abschnitt im Profil</span></div>
+        <div class="tablewrap"><table class="t" id="sec-table">
+          <thead><tr><th>Nr</th><th>Abschnitt</th><th>km</th><th class="num">Länge</th><th class="num">Hm</th><th class="num">Ø %</th><th class="num">max %</th><th class="num">Ziel</th><th class="num">% FTP</th><th>Gang · U/min</th><th class="num">km/h</th><th class="num">Dauer</th><th class="num">Uhrzeit</th></tr></thead>
+          <tbody>${r.sections.map(sc => `<tr data-i="${sc.idx}" class="${S.selected === sc.idx ? 'sel' : ''}">
+            <td>${sc.idx + 1}</td>
+            <td><span class="tri ${sc.cls}"></span>${sc.cls === 'up' ? `Anstieg${sc.climbNo ? ' ' + sc.climbNo : ''}` : sc.cls === 'down' ? 'Abfahrt' : 'Flach/wellig'}</td>
+            <td>${nf(sc.kmStart, 1)}–${nf(sc.kmEnd, 1)}</td><td class="num">${nf(sc.len / 1000, 1)}</td><td class="num">${nf(sc.gain)}</td>
+            <td class="num">${nf(sc.grade * 100, 1)}</td><td class="num">${nf(sc.maxGrade * 100, 1)}</td>
+            <td class="num">${sc.coasting ? '<span class="muted">rollen</span>' : `<span class="zchip" style="background:${zoneVar(sc.zone)}"></span><span class="watt">${sc.target}</span> W`}</td>
+            <td class="num">${sc.coasting ? '–' : nf(sc.targetPct * 100)}</td>
+            <td>${sc.coasting || !sc.gear ? '–' : `${sc.gear.f}×${sc.gear.r} · ${nf(sc.gear.cad)}`}${sc.steepWarn ? ` <span class="badge" title="kleinster Gang an der steilsten Stelle">${nf(sc.steepWarn.cad)} min.</span>` : ''}</td>
+            <td class="num">${nf(sc.speed, 1)}</td><td class="num">${fmtDur(sc.dur)}</td><td class="num">${clock(sc.clock)}</td></tr>`).join('')}</tbody>
+        </table></div>
+      </div>
+      ${r.climbs.length ? `<div class="glass card">
+        <div class="section-title"><h2>Anstiege</h2><span class="eyebrow">${r.climbs.length} · ${nf(r.climbs.reduce((a, c) => a + c.gain, 0))} Hm</span></div>
+        <div class="climbs">${r.climbs.map(c => `<div class="climb">
+          <div class="top"><span class="no">Anstieg ${c.no}</span><span class="w">${c.target}<small>W</small></span></div>
+          ${climbSpark(r, c)}
+          <div class="facts"><span>ab km ${nf(c.kmStart, 1)}</span><span>${nf(c.len / 1000, 1)} km</span><span>${nf(c.gain)} Hm</span><span>Ø ${nf(c.grade * 100, 1)} %</span><span>max ${nf(c.maxGrade * 100, 1)} %</span></div>
+          <div class="facts"><span>${nf(c.targetPct * 100)} % FTP · ${nf(c.target / (num(S.rider.riderKg) || 75), 2)} W/kg</span><span>${fmtDur(c.dur)}</span>${c.gear ? `<span>${c.gear.f}×${c.gear.r} · ${nf(c.gear.cad)} U/min</span>` : ''}</div>
+          ${c.steepWarn ? `<div class="note warn small">Steilste Stelle: im kleinsten Gang ${c.steepWarn.gear.f}×${c.steepWarn.gear.r} nur ca. ${nf(c.steepWarn.cad)} U/min.</div>` : ''}
+        </div>`).join('')}</div>
+      </div>` : ''}
+      <div class="grid2">
+        <div class="glass card">
+          <div class="section-title"><h2>Zeit in Zonen</h2><span class="eyebrow">Coggan</span></div>
+          <div class="zones">${r.zones.map((z, i) => `<div class="zrow"><span>${esc(z.name)}</span><div class="bar" style="width:${Math.max(0.5, z.s / maxZ * 100)}%;background:${zoneVar(i + 1)}"></div><span class="val">${fmtDur(z.s)} · ${nf(z.s / Tz * 100)} %</span></div>`).join('')}</div>
+        </div>
+        <div class="glass card">
+          <div class="section-title"><h2>Verpflegung</h2><span class="eyebrow">${r.fuel.gph ? r.fuel.gph + ' g/h' : '–'}</span></div>
+          <p class="sub">Für ${fmtDur(s.T)}: ${esc(r.fuel.rec.text)} (Jeukendrup 2014).</p>
+          ${r.fuel.markers.length ? `<div class="tablewrap" style="margin-top:10px"><table class="t" style="min-width:0"><thead><tr><th>#</th><th class="num">Fahrzeit</th><th class="num">Uhrzeit</th><th class="num">km</th><th class="num">KH</th></tr></thead><tbody>
+            ${r.fuel.markers.map((m, i) => `<tr><td>${i + 1}</td><td class="num">${fmtDur(m.t)}</td><td class="num">${clock(m.clock)}</td><td class="num">${nf(m.km, 1)}</td><td class="num">${m.grams} g</td></tr>`).join('')}
+          </tbody></table></div>` : ''}
+        </div>
+      </div>`;
+    stackedChart($('#chart'), r);
+    updateIntensityReadout();
+    $$('#sec-table tbody tr').forEach(tr => tr.addEventListener('click', () => {
+      const i = +tr.dataset.i;
+      S.selected = S.selected === i ? null : i;
+      $$('#sec-table tbody tr').forEach(x => x.classList.toggle('sel', +x.dataset.i === S.selected));
+      stackedChart($('#chart'), PLAN);
+    }));
+  }
+
+  /* --------------------------------------------------- Strecke */
+  function buildRouteView() {
+    $('#v-route').innerHTML = `
+      <div class="grid2">
+        <div class="glass card">
+          <h2 class="card-h">GPX laden</h2>
+          <div class="dropzone" id="drop">
+            <p class="sub">Exportiere deine Strecke als GPX – zum Beispiel aus Komoot, bikerouter.de, Strava oder der Veranstalter-Seite – und lade sie hier. Höhendaten müssen enthalten sein.</p>
+            <button class="btn" type="button" id="pick">${IC.upload}GPX-Datei auswählen</button>
+            <input type="file" id="gpxfile" hidden>
+          </div>
+          <div class="divider"></div>
+          <h3 style="margin-bottom:10px">Gespeicherte Strecken</h3>
+          <div class="routes" id="routes"></div>
+          <p class="hint" style="margin-top:10px">Strecken und Einstellungen bleiben nur auf diesem Gerät gespeichert.</p>
+        </div>
+        <div class="glass card">
+          <div class="section-title"><h2 id="rt-name"></h2></div>
+          <div class="outline" id="outline"></div>
+          <div class="stats" id="rt-stats" style="margin-top:12px"></div>
+        </div>
+      </div>
+      <div class="glass card"><div class="section-title"><h2>Anstiege der Strecke</h2></div><div id="rt-climbs"></div></div>`;
+    $('#pick').addEventListener('click', () => $('#gpxfile').click());
+    $('#gpxfile').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+    const dz = $('#drop');
+    ['dragenter', 'dragover'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(t => dz.addEventListener(t, e => { e.preventDefault(); dz.classList.remove('drag'); }));
+    dz.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) loadFile(f); });
+    $('#routes').addEventListener('click', e => {
+      const del = e.target.closest('[data-del]'), sel = e.target.closest('[data-sel]');
+      if (del) {
+        const id = del.dataset.del, item = del.closest('.ritem');
+        if (!item.classList.contains('confirm')) { item.classList.add('confirm'); del.innerHTML = '<span class="small" style="color:var(--warn);font-weight:700">Löschen?</span>'; setTimeout(() => { if (item.isConnected) renderRouteList(); }, 3000); return; }
+        S.routes = S.routes.filter(x => x.id !== id);
+        if (S.activeId === id) { S.activeId = 'sample'; routeCache = { id: null }; }
+        persist(); renderRouteList(); schedule(); return;
+      }
+      if (sel && sel.dataset.sel !== S.activeId) { S.activeId = sel.dataset.sel; S.selected = null; persist(); schedule(); }
+    });
+  }
+
+  async function loadFile(f) {
+    try {
+      const text = await f.text();
+      const parsed = E.parseGPX(text);
+      if (!parsed.name || parsed.name === 'Strecke') parsed.name = f.name.replace(/\.gpx$/i, '');
+      E.buildRoute(parsed); // prüft die Strecke
+      const id = 'r' + Date.now().toString(36);
+      S.routes.unshift({ id, name: parsed.name, pts: compactPts(parsed), added: Date.now() });
+      S.activeId = id; S.selected = null;
+      if (!persist()) { S.routes.shift(); }
+      routeCache = { id: null };
+      recompute();
+      toast(`„${parsed.name}“ geladen`);
+    } catch (err) {
+      toast(err.message || 'Die Datei konnte nicht gelesen werden.');
+    }
+  }
+
+  function renderRouteList() {
+    const items = [{ id: 'sample', name: 'Beispielschleife (synthetisch)', meta: 'Beispiel' }].concat(S.routes.map(x => ({ id: x.id, name: x.name, meta: new Date(x.added || Date.now()).toLocaleDateString('de-DE') })));
+    $('#routes').innerHTML = items.map(it => `<div class="ritem ${it.id === S.activeId ? 'active' : ''}">
+      <button class="iconbtn" type="button" data-sel="${it.id}" aria-label="${esc(it.name)} auswählen" style="flex:1;justify-content:flex-start;display:flex;gap:10px;color:var(--fg);text-align:left;min-width:0"><span class="nm">${esc(it.name)}</span><span class="meta">${esc(it.meta)}</span></button>
+      ${it.id !== 'sample' ? `<button class="iconbtn" type="button" data-del="${it.id}" aria-label="Strecke löschen">${IC.trash}</button>` : ''}
+    </div>`).join('');
+  }
+
+  function renderRoute() {
+    const r = PLAN, rt = r.route;
+    renderRouteList();
+    $('#rt-name').textContent = rt.name;
+    const W = Math.max(280, Math.round($('#outline').clientWidth || 420));
+    $('#outline').innerHTML = outlineSVG(r, W, Math.round(W * 0.62));
+    const st = [['Distanz', nf(rt.D / 1000, 1) + ' km'], ['Höhenmeter', nf(rt.gain) + ' m'], ['Tiefster Punkt', nf(rt.minEle) + ' m'], ['Höchster Punkt', nf(rt.maxEle) + ' m'], ['Anstiege', String(r.climbs.length)], ['Abschnitte', String(r.sections.length)]];
+    $('#rt-stats').innerHTML = st.map(([k, v]) => `<div class="kpi"><div class="k">${k}</div><div class="v" style="font-size:24px">${v}</div></div>`).join('') +
+      `<p class="hint" style="grid-column:1/-1">Höhenmeter aus dem geglätteten Profil – andere Apps rechnen anders und zeigen oft abweichende Werte.</p>`;
+    $('#rt-climbs').innerHTML = r.climbs.length ? `<div class="climbs">${r.climbs.map(c => `<div class="climb"><div class="top"><span class="no">Anstieg ${c.no}</span><span class="small muted">km ${nf(c.kmStart, 1)}–${nf(c.kmEnd, 1)}</span></div>${climbSpark(r, c)}<div class="facts"><span>${nf(c.len / 1000, 1)} km</span><span>${nf(c.gain)} Hm</span><span>Ø ${nf(c.grade * 100, 1)} %</span><span>max ${nf(c.maxGrade * 100, 1)} %</span></div></div>`).join('')}</div>` : '<p class="sub">Keine Anstiege mit mindestens 20 Hm und 2,5 % Durchschnittssteigung.</p>';
+  }
+
+  /* --------------------------------------------------- Export */
+  class CanvasPainter {
+    constructor(ctx, k) { this.c = ctx; this.k = k; }
+    fill(c) { this.c.fillStyle = c; return this; }
+    stroke(c) { this.c.strokeStyle = c; return this; }
+    lw(mm) { this.c.lineWidth = Math.max(0.6, mm * this.k); return this; }
+    dash(on, off) { this.c.setLineDash(on ? [on * this.k, (off || on) * this.k] : []); return this; }
+    alpha(a) { this.c.globalAlpha = a; return this; }
+    save() { this.c.save(); return this; }
+    restore() { this.c.restore(); return this; }
+    lineCap(n) { this.c.lineCap = ['butt', 'round', 'square'][n] || 'butt'; return this; }
+    lineJoin(n) { this.c.lineJoin = ['miter', 'round', 'bevel'][n] || 'miter'; return this; }
+    _end(mode) { if (mode === 'S') this.c.stroke(); else { this.c.fill(); if (mode === 'B') this.c.stroke(); } }
+    rect(x, y, w, h, mode) { const k = this.k; this.c.beginPath(); this.c.rect(x * k, y * k, w * k, h * k); this._end(mode); return this; }
+    roundRect(x, y, w, h, r, mode) { const k = this.k; this.c.beginPath(); if (this.c.roundRect) this.c.roundRect(x * k, y * k, w * k, h * k, r * k); else this.c.rect(x * k, y * k, w * k, h * k); this._end(mode); return this; }
+    line(x1, y1, x2, y2) { const k = this.k; this.c.beginPath(); this.c.moveTo(x1 * k, y1 * k); this.c.lineTo(x2 * k, y2 * k); this.c.stroke(); return this; }
+    poly(pts, close, mode) { const k = this.k; this.c.beginPath(); pts.forEach((p, i) => i ? this.c.lineTo(p[0] * k, p[1] * k) : this.c.moveTo(p[0] * k, p[1] * k)); if (close) this.c.closePath(); this._end(mode === 'f' ? 'f' : mode === 'B' ? 'B' : 'S'); return this; }
+    circle(cx, cy, r, mode) { const k = this.k; this.c.beginPath(); this.c.arc(cx * k, cy * k, r * k, 0, Math.PI * 2); this._end(mode); return this; }
+    clipRect(x, y, w, h) { const k = this.k; this.c.beginPath(); this.c.rect(x * k, y * k, w * k, h * k); this.c.clip(); return this; }
+    text(str, x, y, o) {
+      o = o || {};
+      const size = o.size || 9, bold = !!o.bold;
+      let s = String(str);
+      if (o.maxW && PL.widthOf(s, size, bold) > o.maxW) { while (s.length > 1 && PL.widthOf(s + '…', size, bold) > o.maxW) s = s.slice(0, -1); s += '…'; }
+      const w = PL.widthOf(s, size, bold);
+      let xx = x; if (o.align === 'right') xx = x - w; else if (o.align === 'center') xx = x - w / 2;
+      if (o.color) this.c.fillStyle = o.color;
+      this.c.font = `${bold ? 700 : 400} ${size * 0.3528 * this.k}px Helvetica, Arial, sans-serif`;
+      this.c.textBaseline = 'alphabetic';
+      this.c.fillText(s, xx * this.k, y * this.k);
+      return w;
+    }
+    para(str, x, y, width, o) { o = o || {}; const size = o.size || 9, lh = o.lh || size * 0.42; const lines = PL.wrap(str, width, size, !!o.bold); lines.forEach((ln, i) => this.text(ln, x, y + i * lh, o)); return y + lines.length * lh; }
+  }
+
+  const ST_MODES = [['all', 'Alle Abschnitte'], ['compact', 'Kompakt'], ['custom', 'Eigene Auswahl']];
+  const ST_HINT = {
+    all: 'Jeder Abschnitt bekommt eine eigene Zeile. Lange Strecken brauchen dann mehrere Zettel.',
+    compact: 'Ein Zettel: oben Grundwerte für Flachstücke, andere Anstiege und Abfahrten. Darunter einzeln die Anstiege ab der gewählten Höhe und Flachstücke, deren Vorgabe mindestens 5 % vom Grundwert abweicht (z. B. Gegenwind). Passt nicht alles drauf, bleiben die Abschnitte, auf denen dein Pacing am meisten Zeit ausmacht – meist die längsten Anstiege.',
+    custom: 'Du wählst die Zeilen selbst. Für alles andere stehen oben die Grundwerte.',
+  };
+
+  function buildExportView() {
+    const st = S.sticker;
+    $('#v-export').innerHTML = `
+      <div class="note warn" id="dl-note" hidden>In dieser Ansicht lassen sich keine Dateien speichern. In der installierten App öffnet sich beim Export das Teilen-Menü zum Sichern, Drucken oder Versenden.</div>
+      <div class="grid2">
+        <div class="glass card">
+          <div class="section-title"><h2>Zettel für Vorbau & Lenker</h2><span class="eyebrow">PDF · zum Ausschneiden</span></div>
+          <div class="fields">
+            ${fSel('stFmt', 'Format', st.fmt, Object.entries(STICKERS).map(([k, v]) => [k, v[1] ? `${v[0]} · ${v[1]} × ${v[2]} mm` : v[0]]), { g: 'sticker', wide: true })}
+            ${fNum('stW', 'Breite', 'mm', st.w, { g: 'sticker' })}
+            ${fNum('stH', 'Höhe', 'mm', st.h, { g: 'sticker' })}
+          </div>
+          <div class="divider"></div>
+          <div class="lbl" style="margin-bottom:6px">Inhalt</div>
+          <div class="seg" role="group" aria-label="Inhalt des Zettels" id="st-mode">
+            ${ST_MODES.map(([k, t]) => `<button type="button" data-mode="${k}" aria-pressed="${st.mode === k}">${t}</button>`).join('')}
+          </div>
+          <p class="hint" id="st-mode-hint" style="margin-top:8px"></p>
+          <div class="fields" style="margin-top:12px">
+            <div id="st-gain-wrap">${fSel('stMinGain', 'Anstiege einzeln ab', st.minGain, [[20, '20 Hm'], [30, '30 Hm'], [50, '50 Hm'], [80, '80 Hm'], [100, '100 Hm'], [150, '150 Hm'], [200, '200 Hm']], { g: 'sticker' })}</div>
+            ${fSel('stLines', 'Zeilen', st.lines, [[2, 'Ausführlich'], [1, 'Kurz']], { g: 'sticker', hint: 'Kurz = nur km und Watt, passt mehr drauf' })}
+            ${fSel('stCopies', 'Exemplare', st.copies, [[1, '1'], [2, '2'], [3, '3']], { g: 'sticker' })}
+          </div>
+          <div class="checks">
+            <label class="check"><input type="checkbox" id="stProfile"${st.profile ? ' checked' : ''}> Höhenprofil zeigen</label>
+            <label class="check"><input type="checkbox" id="stRound5"${st.round5 ? ' checked' : ''}> Watt auf 5 W runden</label>
+            <label class="check"><input type="checkbox" id="stAutoFont"${st.autoFont !== false ? ' checked' : ''}> Schrift vergrößern, wenn Platz ist</label>
+          </div>
+          <div class="fit" id="st-fit"></div>
+          <div id="st-picks-wrap" hidden>
+            <div class="section-title" style="margin:14px 0 8px"><h3>Zeilen auswählen</h3>
+              <div class="btnrow"><button class="btn small ghost" type="button" data-preset="compact">Wie Kompakt</button><button class="btn small ghost" type="button" data-preset="climbs">Alle Anstiege</button><button class="btn small ghost" type="button" data-preset="none">Keine</button></div>
+            </div>
+            <div class="picks" id="st-picks"></div>
+          </div>
+          <div class="btnrow" style="margin-top:16px"><button class="btn" type="button" id="exp-sticker">${IC.tag}Zettel als PDF</button></div>
+          <p class="hint" style="margin-top:10px">Mit 100 % drucken (nicht „an Seite anpassen“) und das Kontrollmaß nachmessen. Zum Schutz vor Regen mit transparentem Klebeband abdecken.</p>
+        </div>
+        <div class="glass card">
+          <div class="section-title"><h2>Vorschau</h2><span class="hint" id="st-info"></span></div>
+          <div class="preview" id="st-prev"></div>
+        </div>
+      </div>
+      <div class="glass card">
+        <div class="section-title"><h2>Strategie-Bericht</h2><span class="eyebrow">PDF · A4</span></div>
+        <p class="sub">Kennzahlen, Höhenprofil mit Leistungszonen, Leistungsvorgaben, W'-Bilanz, Abschnitts- und Anstiegstabelle, Verpflegung, deine Eingaben sowie Methodik und Quellen.</p>
+        <div class="btnrow" style="margin-top:14px"><button class="btn" type="button" id="exp-report">${IC.pdf}Bericht als PDF</button></div>
+      </div>`;
+    const v = $('#v-export');
+    v.addEventListener('change', onSticker);
+    v.addEventListener('input', onSticker);
+    $$('#st-mode button').forEach(b => b.addEventListener('click', () => {
+      S.sticker.mode = b.dataset.mode;
+      if (S.sticker.mode === 'custom' && PLAN && !S.sticker.picks[S.activeId]) S.sticker.picks[S.activeId] = R.compactKeys(PLAN, S.sticker.w, S.sticker.h, stickerOpts());
+      persist(); renderExport();
+    }));
+    $('#st-picks-wrap').addEventListener('click', e => {
+      const b = e.target.closest('[data-preset]');
+      if (!b || !PLAN) return;
+      const all = R.stickerRows(PLAN);
+      const keys = b.dataset.preset === 'compact' ? R.compactKeys(PLAN, S.sticker.w, S.sticker.h, stickerOpts())
+        : b.dataset.preset === 'climbs' ? all.filter(x => x.cls === 'up').map(x => x.key) : [];
+      S.sticker.picks[S.activeId] = keys;
+      persist(); renderExport();
+    });
+    $('#exp-report').addEventListener('click', () => { if (!PLAN) return; deliver(R.buildReport(PLAN).output(), fileName('Strategie')); });
+    $('#exp-sticker').addEventListener('click', () => { if (!PLAN) return; deliver(R.buildSticker(PLAN, stickerOpts()).output(), fileName('Zettel')); });
+  }
+
+  function stickerOpts() {
+    const st = S.sticker;
+    return {
+      w: st.w, h: st.h, copies: st.copies, mode: st.mode, minGain: +st.minGain, lines: +st.lines,
+      round5: !!st.round5, profile: st.profile !== false, autoFont: st.autoFont !== false,
+      picks: st.picks[S.activeId] || null,
+    };
+  }
+
+  function onSticker(e) {
+    const el = e.target, st = S.sticker;
+    if (el.id === 'stFmt') { st.fmt = el.value; const f = STICKERS[st.fmt]; if (f[1]) { st.w = f[1]; st.h = f[2]; $('#stW').value = st.w; $('#stH').value = st.h; } }
+    if (el.id === 'stW' || el.id === 'stH') { const v = num(el.value); if (v) { st[el.id === 'stW' ? 'w' : 'h'] = Math.max(el.id === 'stW' ? 22 : 60, Math.min(el.id === 'stW' ? 90 : 260, v)); st.fmt = 'custom'; $('#stFmt').value = 'custom'; } }
+    if (el.id === 'stCopies') st.copies = +el.value;
+    if (el.id === 'stMinGain') st.minGain = +el.value;
+    if (el.id === 'stLines') st.lines = +el.value;
+    if (el.id === 'stProfile') st.profile = el.checked;
+    if (el.id === 'stRound5') st.round5 = el.checked;
+    if (el.id === 'stAutoFont') st.autoFont = el.checked;
+    if (el.dataset && el.dataset.key !== undefined) {
+      const set = new Set(st.picks[S.activeId] || []);
+      if (el.checked) set.add(+el.dataset.key); else set.delete(+el.dataset.key);
+      st.picks[S.activeId] = Array.from(set).sort((a, b) => a - b);
+    }
+    persist();
+    if (e.type === 'change' || el.tagName === 'SELECT' || el.type === 'checkbox') renderExport();
+  }
+
+  function renderExport() {
+    if (!PLAN) return;
+    const st = S.sticker, o = stickerOpts();
+    if (st.mode === 'custom' && !st.picks[S.activeId]) { st.picks[S.activeId] = R.compactKeys(PLAN, st.w, st.h, o); o.picks = st.picks[S.activeId]; }
+    const lay = R.stickerLayout(PLAN, st.w, st.h, o);
+    $$('#st-mode button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === st.mode)));
+    $('#st-mode-hint').textContent = ST_HINT[st.mode];
+    $('#st-gain-wrap').hidden = st.mode !== 'compact';
+    // Platzanzeige
+    const n = lay.rows.length, cap = lay.capacity;
+    let msg, cls = '';
+    if (st.mode === 'all') msg = `${n} Zeilen · ${lay.parts.length} Zettel`;
+    else if (lay.parts.length > 1) { msg = `${n} Zeilen ausgewählt, Platz für ${cap} – das ergibt ${lay.parts.length} Zettel. Wähle Zeilen ab oder nimm „Kurz“ bzw. ohne Profil.`; cls = 'warn'; }
+    else msg = `Passt auf 1 Zettel · ${n} von max. ${cap} Zeilen${lay.fontScale > 1.01 ? ` · Schrift +${nf((lay.fontScale - 1) * 100)} %` : ''}`;
+    if (lay.dropped.length) msg += ` · ${lay.dropped.length} kürzere Abschnitt${lay.dropped.length > 1 ? 'e' : ''} (km ${lay.dropped.map(x => nf(x.kmStart, 0)).join(', ')}) über die Grundwerte`;
+    const fill = st.mode === 'all' ? 100 : Math.min(100, n / Math.max(1, cap) * 100);
+    $('#st-fit').className = 'fit ' + cls;
+    $('#st-fit').innerHTML = `<div class="fitbar"><i style="width:${fill}%"></i></div><span>${esc(msg)}</span>`;
+    // Auswahlliste
+    $('#st-picks-wrap').hidden = st.mode !== 'custom';
+    if (st.mode === 'custom') {
+      const set = new Set(st.picks[S.activeId] || []);
+      $('#st-picks').innerHTML = lay.all.map(x => `<label class="pick${set.has(x.key) ? ' on' : ''}">
+        <input type="checkbox" data-key="${x.key}"${set.has(x.key) ? ' checked' : ''}>
+        <span class="tri ${x.cls}"></span>
+        <span class="pt"><b>km ${nf(x.kmStart, 1)}</b> ${x.cls === 'up' ? `Anstieg${x.climbNo ? ' ' + x.climbNo : ''} · ${nf(x.len / 1000, 1)} km · ${nf(x.gain)} Hm` : x.cls === 'down' ? `Abfahrt · ${nf(x.len / 1000, 1)} km` : `Flach · ${nf(x.len / 1000, 1)} km`}</span>
+        <span class="pw">${x.roll ? 'rollen' : `${x.target} W`}</span></label>`).join('');
+    }
+    $('#st-info').textContent = `${st.w} × ${st.h} mm · ${lay.parts.length} Zettel`;
+    // Vorschau
+    const box = $('#st-prev');
+    box.innerHTML = '';
+    const k = Math.max(3, Math.min(5.2, 520 / st.h)), dpr = Math.min(3, window.devicePixelRatio || 1);
+    lay.parts.forEach((_, i) => {
+      const cv = document.createElement('canvas');
+      cv.width = Math.round(st.w * k * dpr); cv.height = Math.round(st.h * k * dpr);
+      cv.style.width = (st.w * k) + 'px'; cv.style.height = (st.h * k) + 'px';
+      cv.setAttribute('aria-label', `Vorschau Zettel Teil ${i + 1}`);
+      const p = new CanvasPainter(cv.getContext('2d'), k * dpr);
+      R.drawSticker(p, PLAN, lay, i, 0, 0, st.w, st.h);
+      box.appendChild(cv);
+    });
+  }
+
+  function fileName(kind) {
+    const base = (PLAN.route.name || 'Strecke').replace(/[^\wäöüÄÖÜß\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 40) || 'Strecke';
+    return `${kind}_${base}.pdf`;
+  }
+
+  // In Claude (Artifact) läuft das Speichern über die Downloads-Funktion des Viewers
+  let dlPromise = null;
+  function getDownloads() {
+    if (!window.claude || typeof window.claude.use !== 'function') return Promise.resolve(null);
+    if (!dlPromise) dlPromise = Promise.resolve(window.claude.use('downloads')).catch(() => null);
+    return dlPromise;
+  }
+  function deliver(bytes, name) {
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    if (inFrame) {
+      getDownloads().then(dl => {
+        if (!dl) { const n = $('#dl-note'); if (n) n.hidden = false; toast('Speichern ist in dieser Ansicht nicht möglich.'); return; }
+        dl.save({ filename: name, data: blob }).then(() => toast(`${name} gespeichert`)).catch(err => {
+          const c = err && err.code;
+          if (c === 'declined') return;
+          if (c === 'rate_limited') { toast('Bitte kurz warten und erneut tippen.'); return; }
+          const n = $('#dl-note'); if (n) n.hidden = false;
+          toast('Speichern ist in dieser Ansicht nicht möglich.');
+        });
+      });
+      return;
+    }
+    let file = null;
+    try { file = new File([blob], name, { type: 'application/pdf' }); } catch (e) { /* ältere Browser */ }
+    if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+      navigator.share({ files: [file], title: name }).then(() => toast('PDF erstellt')).catch(err => {
+        if (err && err.name === 'AbortError') return;
+        download(blob, name);
+      });
+      return;
+    }
+    download(blob, name);
+  }
+  function download(blob, name) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    toast(`${name} erstellt`);
+  }
+
+  /* --------------------------------------------------- Methodik */
+  function buildMethodView() {
+    $('#v-method').innerHTML = `
+      <div class="glass card method">
+        ${R.METHOD.map(([k, t]) => `<div><h3>${esc(k)}</h3><p>${esc(t)}</p></div>`).join('')}
+        <div><h3>Deine Daten</h3><p>Alles wird auf diesem Gerät berechnet und gespeichert. Es gibt kein Konto und keine Übertragung an einen Server; nach der Installation funktioniert die App auch ohne Internet.</p></div>
+      </div>
+      <div class="glass card"><h2 class="card-h">Quellen</h2><ol class="sources">${R.SOURCES.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>`;
+  }
+
+  /* --------------------------------------------- Hintergrund */
+  function terrain() {
+    const cv = document.getElementById('terrain');
+    if (!cv) return;
+    const draw = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1), W = window.innerWidth, H = window.innerHeight;
+      cv.width = W * dpr; cv.height = H * dpr;
+      const ctx = cv.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, W, H);
+      const col = getComputedStyle(document.documentElement).getPropertyValue('--contour').trim() || 'rgba(0,0,0,.1)';
+      const cell = 14, nx = Math.ceil(W / cell) + 1, ny = Math.ceil(H / cell) + 1;
+      let seed = 11; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      const bumps = Array.from({ length: 9 }, () => [rnd() * W, rnd() * H, 120 + rnd() * 260, (rnd() - 0.35) * 2]);
+      const f = new Float32Array(nx * ny);
+      for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+        const x = i * cell, y = j * cell;
+        let v = 0.25 * Math.sin(x / 260) * Math.cos(y / 310);
+        for (const [bx, by, r, a] of bumps) v += a * Math.exp(-((x - bx) ** 2 + (y - by) ** 2) / (2 * r * r));
+        f[j * nx + i] = v;
+      }
+      ctx.strokeStyle = col; ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let lv = -1.2; lv <= 2; lv += 0.12) {
+        for (let j = 0; j < ny - 1; j++) for (let i = 0; i < nx - 1; i++) {
+          const a = f[j * nx + i], b = f[j * nx + i + 1], c = f[(j + 1) * nx + i + 1], d = f[(j + 1) * nx + i];
+          const idx = (a > lv) | ((b > lv) << 1) | ((c > lv) << 2) | ((d > lv) << 3);
+          if (idx === 0 || idx === 15) continue;
+          const x = i * cell, y = j * cell, t = (p, q) => (lv - p) / (q - p);
+          const T = [x + t(a, b) * cell, y], Rr = [x + cell, y + t(b, c) * cell], B = [x + t(d, c) * cell, y + cell], Lf = [x, y + t(a, d) * cell];
+          const seg = (p, q) => { ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); };
+          switch (idx) {
+            case 1: case 14: seg(Lf, T); break; case 2: case 13: seg(T, Rr); break; case 3: case 12: seg(Lf, Rr); break;
+            case 4: case 11: seg(Rr, B); break; case 6: case 9: seg(T, B); break; case 7: case 8: seg(Lf, B); break;
+            case 5: seg(Lf, T); seg(Rr, B); break; case 10: seg(T, Rr); seg(Lf, B); break;
+          }
+        }
+      }
+      ctx.stroke();
+    };
+    let rt = null;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { draw(); if (PLAN) { if (S.tab === 'plan') stackedChart($('#chart'), PLAN); if (S.tab === 'route') renderRoute(); } }, 200); });
+    if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+    new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    draw();
+  }
+
+  /* --------------------------------------------------- Start */
+  function renderAll() {
+    renderHeader();
+    if (S.tab !== 'plan') { try { updateIntensityReadout(); } catch (e) { /* Ansicht noch nicht sichtbar */ } }
+    if (S.tab === 'plan') renderPlan();
+    else if (S.tab === 'route') renderRoute();
+    else if (S.tab === 'export') renderExport();
+  }
+
+  function start() {
+    if (inFrame) getDownloads().then(dl => { if (!dl) { const n = $('#dl-note'); if (n) n.hidden = false; } });
+    shell();
+    terrain();
+    recompute();
+    if (window.__PWA__ && 'serviceWorker' in navigator && location.protocol === 'https:') {
+      navigator.serviceWorker.register('sw.js').catch(() => { /* offline-Cache optional */ });
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
+</script>
+</body>
+</html>
