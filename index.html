@@ -372,7 +372,7 @@ table.t tbody tr.sel td { background: var(--accent-soft); }
 <body>
 <canvas id="terrain" aria-hidden="true"></canvas><div class="blobs" aria-hidden="true"></div>
 <div class="app" id="app"></div>
-<script>window.__PWA__ = true; window.__BUILD__ = "202610251306";</script>
+<script>window.__PWA__ = true; window.__BUILD__ = "202611132211";</script>
 <script>
 /* Helvetica-Laufweiten (AFM, WinAnsi 32–255), aus den Adobe-Core-14-Metriken */
 const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,278,278,584,584,584,556,1015,667,667,722,722,667,611,778,722,278,500,667,556,833,722,778,667,778,722,667,611,722,667,944,667,667,611,278,278,278,469,556,333,556,556,500,556,556,278,556,556,222,222,500,222,833,556,556,556,556,333,500,278,556,500,722,500,500,500,334,260,334,584,761,556,0,222,556,333,1000,556,556,333,1000,667,333,1000,0,611,0,0,222,222,333,333,350,556,1000,333,1000,500,333,944,0,500,667,278,333,556,556,556,556,260,556,333,737,370,556,584,333,737,333,400,584,333,333,333,556,537,278,333,333,365,556,834,834,834,611,667,667,667,667,667,667,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,500,556,556,556,556,278,278,278,278,556,556,556,556,556,556,556,584,611,556,556,556,556,500,556,500], B: [278,333,474,556,556,889,722,238,333,333,389,584,278,333,278,278,556,556,556,556,556,556,556,556,556,556,333,333,584,584,584,611,975,722,722,722,722,667,611,778,722,278,556,722,611,833,722,778,667,778,722,667,611,722,667,944,667,667,611,333,278,333,584,556,333,556,611,556,611,556,333,611,611,278,278,556,278,889,611,611,611,611,389,556,333,611,556,778,556,556,500,389,280,389,584,761,556,0,278,556,500,1000,556,556,333,1000,667,333,1000,0,611,0,0,278,278,500,500,350,556,1000,333,1000,556,333,944,0,500,667,278,333,556,556,556,556,280,556,333,737,370,556,584,333,737,333,400,584,333,333,333,611,556,278,333,333,365,556,834,834,834,611,722,722,722,722,722,722,1000,722,667,667,667,667,278,278,278,278,722,722,778,778,778,778,778,584,778,722,722,722,722,667,667,611,556,556,556,556,556,556,889,556,556,556,556,556,278,278,278,278,611,611,611,611,611,611,611,584,611,611,611,611,611,556,611,556] };
@@ -1855,7 +1855,7 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
     pg = doc._newPage('Annahmen & Methodik');
     y = 30;
     pg.text('Deine Eingaben', 14, y, { size: 10, bold: true, color: C.ink }); y += 6;
-    const gearTxt = `${p.chainrings.join('/')} · ${p.cogs[0]}–${p.cogs[p.cogs.length - 1]} (${p.cogs.length}-fach) · Abrollumfang ${nf(p.circ * 1000)} mm`;
+    const gearTxt = `${p.bikeName ? p.bikeName + ': ' : ''}${p.chainrings.length === 1 ? '1×' : ''}${p.chainrings.join('/')} · ${p.cogs[0]}–${p.cogs[p.cogs.length - 1]} (${p.cogs.length}-fach) · Abrollumfang ${nf(p.circ * 1000)} mm`;
     const inputs = [
       ['FTP', `${nf(p.ftp)} W`], ['CP / W\'', p.wprime ? `${nf(p.cp || p.ftp)} W / ${nf(p.wprime / 1000, 1)} kJ${p.cp ? '' : ' (CP = FTP angenommen)'}` : 'W\' nicht angegeben'],
       ['Gewicht', `Fahrer ${nf(p.riderKg, 1)} kg · Rad ${nf(p.bikeKg, 1)} kg · Zuladung ${nf(p.extraKg, 1)} kg`],
@@ -1949,11 +1949,78 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
     },
   };
 
-  const CRANKS = { '50/34': [50, 34], '52/36': [52, 36] };
-  const CASSETTES = {
-    '11-34': [11, 12, 13, 14, 15, 17, 19, 21, 24, 27, 30, 34],
-    '11-36': [11, 12, 13, 14, 15, 17, 19, 21, 24, 28, 32, 36],
-  };
+  // Straßenübersetzungen: 12-fach (Shimano Dura-Ace R9200 / Ultegra R8100 / 105 R7100, SRAM AXS Red / Force / Rival)
+  // 11-fach (Shimano Ultegra R8000 u. a., SRAM PG-1170) und 1x13 (SRAM Red/Force/Rival XPLR E1, XG-1391/1371/1351). Gruppen: [Titel, Hersteller, Fach, Einträge]
+  const CRANK_GROUPS = [
+    ['Shimano 12-fach', 'Shimano', 12, [
+      ['50/34', [50, 34], '50/34 (Dura-Ace, Ultegra, 105)'],
+      ['52/36', [52, 36], '52/36 (Dura-Ace, Ultegra, 105)'],
+      ['54/40', [54, 40], '54/40 · nur Dura-Ace'],
+    ]],
+    ['SRAM AXS 12-fach', 'SRAM', 12, [
+      ['43/30', [43, 30], '43/30 · Wide (Force, Rival)'],
+      ['46/33', [46, 33], '46/33 (Red, Force, Rival)'],
+      ['48/35', [48, 35], '48/35 (Red, Force, Rival)'],
+      ['50/37', [50, 37], '50/37 (Red, Force)'],
+      ['52/39', [52, 39], '52/39 · nur Red'],
+      ['54/41', [54, 41], '54/41 · nur Red'],
+      ['56/43', [56, 43], '56/43 · nur Red'],
+    ]],
+    ['11-fach (Shimano & SRAM)', 'Shimano/SRAM', 11, [
+      ['11f-46/36', [46, 36], '46/36 · 11-fach (Ultegra, Red, Force, Rival)'],
+      ['11f-50/34', [50, 34], '50/34 · 11-fach (Ultegra, Red, Force, Rival)'],
+      ['11f-52/36', [52, 36], '52/36 · 11-fach (Ultegra, Red, Force, Rival)'],
+      ['11f-53/39', [53, 39], '53/39 · 11-fach (Ultegra, Red, Force)'],
+      ['11f-55/42', [55, 42], '55/42 · 11-fach (nur SRAM Red)'],
+    ]],
+    ['SRAM XPLR 1x13', 'SRAM', 13, [
+      ['13f-38', [38], '38 · 1x13 (Red, Force, Rival)'],
+      ['13f-40', [40], '40 · 1x13 (Red, Force, Rival)'],
+      ['13f-42', [42], '42 · 1x13 (Red, Force, Rival)'],
+      ['13f-44', [44], '44 · 1x13 (Red, Force, Rival, Force Aero)'],
+      ['13f-46', [46], '46 · 1x13 (Red, Force, Rival, Force Aero)'],
+      ['13f-48', [48], '48 · 1x13 Aero (Red, Force)'],
+      ['13f-50', [50], '50 · 1x13 Aero (Red, Force)'],
+      ['13f-52', [52], '52 · 1x13 Aero (nur Red)'],
+    ]],
+  ];
+  const CASSETTE_GROUPS = [
+    ['Shimano 12-fach', 'Shimano', 12, [
+      ['11-28', [11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 24, 28], '11-28 · nur Dura-Ace'],
+      ['11-30', [11, 12, 13, 14, 15, 16, 17, 19, 21, 24, 27, 30], '11-30 (Dura-Ace, Ultegra)'],
+      ['11-34', [11, 12, 13, 14, 15, 17, 19, 21, 24, 27, 30, 34], '11-34 (Dura-Ace, Ultegra, 105)'],
+      ['11-36', [11, 12, 13, 14, 15, 17, 19, 21, 24, 28, 32, 36], '11-36 · nur 105'],
+    ]],
+    ['SRAM AXS 12-fach (XDR)', 'SRAM', 12, [
+      ['10-28', [10, 11, 12, 13, 14, 15, 16, 17, 19, 21, 24, 28], '10-28 (Red, Force)'],
+      ['10-30', [10, 11, 12, 13, 14, 15, 17, 19, 21, 24, 27, 30], '10-30 (Red, Force, Rival)'],
+      ['10-33', [10, 11, 12, 13, 14, 15, 17, 19, 21, 24, 28, 33], '10-33 (Red, Force)'],
+      ['10-36', [10, 11, 12, 13, 15, 17, 19, 21, 24, 28, 32, 36], '10-36 (Red, Force, Rival)'],
+    ]],
+    ['Shimano 11-fach', 'Shimano', 11, [
+      ['s11-11-25', [11, 12, 13, 14, 15, 16, 17, 19, 21, 23, 25], '11-25 · 11-fach'],
+      ['s11-11-28', [11, 12, 13, 14, 15, 17, 19, 21, 23, 25, 28], '11-28 · 11-fach'],
+      ['s11-11-30', [11, 12, 13, 14, 15, 17, 19, 21, 24, 27, 30], '11-30 · 11-fach'],
+      ['s11-11-32', [11, 12, 13, 14, 16, 18, 20, 22, 25, 28, 32], '11-32 · 11-fach'],
+      ['s11-11-34', [11, 13, 15, 17, 19, 21, 23, 25, 27, 30, 34], '11-34 · 11-fach (HG800)'],
+      ['s11-12-25', [12, 13, 14, 15, 16, 17, 18, 19, 21, 23, 25], '12-25 · 11-fach'],
+      ['s11-14-28', [14, 15, 16, 17, 18, 19, 20, 21, 23, 25, 28], '14-28 · 11-fach'],
+    ]],
+    ['SRAM 11-fach (PG-1170)', 'SRAM', 11, [
+      ['r11-11-25', [11, 12, 13, 14, 15, 16, 17, 19, 21, 23, 25], '11-25 · 11-fach'],
+      ['r11-11-26', [11, 12, 13, 14, 15, 16, 17, 19, 21, 23, 26], '11-26 · 11-fach'],
+      ['r11-11-28', [11, 12, 13, 14, 15, 16, 17, 19, 22, 25, 28], '11-28 · 11-fach'],
+      ['r11-11-32', [11, 12, 13, 14, 15, 17, 19, 22, 25, 28, 32], '11-32 · 11-fach'],
+      ['r11-11-36', [11, 12, 13, 15, 17, 19, 22, 25, 28, 32, 36], '11-36 · 11-fach'],
+    ]],
+    ['SRAM XPLR 13-fach (XDR)', 'SRAM', 13, [
+      ['13f-10-46', [10, 11, 12, 13, 15, 17, 19, 21, 24, 28, 32, 38, 46], '10-46 · 13-fach (Red, Force, Rival XPLR)'],
+    ]],
+  ];
+  const toMap = groups => { const m = {}; groups.forEach(([, brand, speed, items]) => items.forEach(([k, v, t]) => { m[k] = { v, brand, speed, label: t.split(' ')[0] }; })); return m; };
+  const CRANKS_M = toMap(CRANK_GROUPS), CASSETTES_M = toMap(CASSETTE_GROUPS);
+  const CRANKS = Object.fromEntries(Object.entries(CRANKS_M).map(([k, x]) => [k, x.v]));
+  const CASSETTES = Object.fromEntries(Object.entries(CASSETTES_M).map(([k, x]) => [k, x.v]));
   const POSITIONS = { upright: ['Oberlenker / aufrecht', 0.40], hoods: ['Bremsgriffe', 0.36], drops: ['Unterlenker', 0.32], tt: ['Zeitfahrlenker', 0.25], custom: ['Eigener Wert', null] };
   const CRR = { smooth: ['Sehr glatter Asphalt', 0.003], normal: ['Normaler Asphalt', 0.004], rough: ['Rauer Asphalt', 0.006], bad: ['Schlechter Belag', 0.008], custom: ['Eigener Wert', null] };
   const WIND = [['N', 0], ['NO', 45], ['O', 90], ['SO', 135], ['S', 180], ['SW', 225], ['W', 270], ['NW', 315]];
@@ -1980,7 +2047,17 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
     selected: null,
   };
   if (S.activeId !== 'sample' && !S.routes.find(r => r.id === S.activeId)) S.activeId = 'sample';
-  const persist = () => store.save({ rider: S.rider, race: S.race, routes: S.routes, activeId: S.activeId, tab: S.tab, sticker: S.sticker, helpOpen: S.helpOpen });
+
+  /* ------------------------------------------------------ Räder */
+  // Ein Rad speichert Übersetzung, Reifen und Radgewicht; das aktive Rad wird in S.rider gespiegelt.
+  const BIKE_KEYS = ['crank', 'crankCustom', 'cassette', 'cassetteCustom', 'tireMm', 'circMm', 'bikeKg'];
+  const bikeFrom = (src, name, id) => Object.assign({ id: id || 'b' + Date.now().toString(36), name }, Object.fromEntries(BIKE_KEYS.map(k => [k, src[k]])));
+  S.bikes = Array.isArray(saved.bikes) && saved.bikes.length ? saved.bikes : [bikeFrom(S.rider, 'Mein Rad')];
+  S.bikeId = S.bikes.some(b => b.id === saved.bikeId) ? saved.bikeId : S.bikes[0].id;
+  const activeBike = () => S.bikes.find(b => b.id === S.bikeId) || S.bikes[0];
+  BIKE_KEYS.forEach(k => { if (activeBike()[k] !== undefined) S.rider[k] = activeBike()[k]; });
+
+  const persist = () => store.save({ rider: S.rider, race: S.race, routes: S.routes, activeId: S.activeId, tab: S.tab, sticker: S.sticker, helpOpen: S.helpOpen, bikes: S.bikes, bikeId: S.bikeId });
 
   /* ------------------------------------------- Beispielstrecke */
   function sampleParsed() {
@@ -2052,7 +2129,7 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
       riderKg: num(r.riderKg) || 75, bikeKg: num(r.bikeKg) || 8, extraKg: num(r.extraKg) || 0,
       ftp, cp: num(r.cp), wprime: wpk ? wpk * 1000 : null, wReserve: (num(r.wReserve) || 25) / 100,
       cda: num(r.cda) || 0.36, crr: num(r.crr) || 0.004, eta: 0.976,
-      chainrings, cogs, tireMm: num(r.tireMm) || 28, circMm: num(r.circMm),
+      chainrings, cogs, tireMm: num(r.tireMm) || 28, circMm: num(r.circMm), bikeName: activeBike().name,
       cadFlat: num(r.cadFlat) || 90, cadClimb: num(r.cadClimb) || 75, cadMax: num(r.cadMax) || 115,
       temp: num(c.temp) ?? 18, windSpeed: num(c.windSpeed) || 0, windFrom: num(c.windFrom) ?? 270,
       type: c.type, ifTarget: ifT, variability: (num(c.variability) ?? 10) / 100, vmaxDown: num(c.vmaxDown) || 60,
@@ -2103,6 +2180,11 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
   function fNum(id, label, unit, val, o) {
     o = o || {};
     return `<div class="field"><label for="${id}">${esc(label)}</label><div class="inp"><input id="${id}" data-k="${o.k || id}" data-g="${o.g}" inputmode="decimal" autocomplete="off" class="${unit ? 'has-unit' : ''}" value="${esc(val === null || val === undefined ? '' : String(val).replace('.', ','))}" placeholder="${esc(o.ph || '')}">${unit ? `<span class="unit">${esc(unit)}</span>` : ''}</div>${o.hint ? `<div class="hint">${o.hint}</div>` : ''}</div>`;
+  }
+  function fSelG(id, label, val, groups, o) {
+    o = o || {};
+    const opt = (v, t) => `<option value="${esc(v)}"${String(v) === String(val) ? ' selected' : ''}>${esc(t)}</option>`;
+    return `<div class="field${o.wide ? ' wide' : ''}"><label for="${id}">${esc(label)}</label><div class="inp"><select id="${id}" data-k="${o.k || id}" data-g="${o.g}">${groups.map(([g, , , items]) => `<optgroup label="${esc(g)}">${items.map(it => opt(it[0], it[2])).join('')}</optgroup>`).join('')}${opt('custom', 'Eigene …')}</select></div>${o.hint ? `<div class="hint">${o.hint}</div>` : ''}</div>`;
   }
   function fSel(id, label, val, options, o) {
     o = o || {};
@@ -2156,7 +2238,7 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
     const ex = [];
     if (S.activeId === 'sample') ex.push('Beispielstrecke');
     if (S.rider.example) ex.push('Beispielwerte');
-    $('#h-eyebrow').innerHTML = ex.length ? `<span class="badge">${ex.join(' · ')}</span>` : esc(E.TYPE_INFO[S.race.type].label);
+    $('#h-eyebrow').innerHTML = ex.length ? `<span class="badge">${ex.join(' · ')}</span>` : esc(`${E.TYPE_INFO[S.race.type].label} · ${activeBike().name}`);
   }
 
   /* ---------------------------------------------- Fahrer & Rad */
@@ -2185,7 +2267,7 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
           <div class="section-title"><h2>Gewicht</h2></div>
           <div class="fields">
             ${fNum('riderKg', 'Fahrer', 'kg', r.riderKg, { g: 'rider' })}
-            ${fNum('bikeKg', 'Rad', 'kg', r.bikeKg, { g: 'rider' })}
+            ${fNum('bikeKg', 'Rad', 'kg', r.bikeKg, { g: 'rider', hint: 'gehört zum gewählten Rad' })}
             ${fNum('extraKg', 'Zuladung', 'kg', r.extraKg, { g: 'rider', hint: 'Flaschen, Werkzeug, Kleidung' })}
           </div>
           <div class="divider"></div>
@@ -2207,12 +2289,34 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
           </div></details>
         </div>
       </div>
-      <div class="glass card">
-        <div class="section-title"><h2>Antrieb & Trittfrequenz</h2><span class="eyebrow">Shimano 105 Di2 R7100 vorbelegt</span></div>
+      <div class="glass card" id="bikes">
+        <div class="section-title"><h2>Meine Räder</h2><span class="eyebrow">Übersetzung, Reifen & Gewicht je Rad</span></div>
         <div class="fields">
-          ${fSel('crank', 'Kurbel', r.crank, [['50/34', '50/34'], ['52/36', '52/36'], ['custom', 'Eigene …']], { g: 'rider', wide: true })}
+          <div class="field wide"><label for="bikeSel">Rad</label><div class="inp"><select id="bikeSel"></select></div></div>
+        </div>
+        <div class="btnrow" style="margin-top:10px">
+          <button class="btn small" type="button" id="bike-new">Neues Rad</button>
+          <button class="btn small ghost" type="button" id="bike-ren">Umbenennen</button>
+          <button class="btn small ghost" type="button" id="bike-del">Löschen</button>
+        </div>
+        <div id="bike-form" hidden style="margin-top:12px">
+          <div class="divider"></div>
+          <div class="fields">
+            <div class="field wide"><label for="bf-name">Name</label><div class="inp"><input id="bf-name" autocomplete="off" maxlength="40" placeholder="z. B. Rennrad, Gravel, Zeitfahrrad"></div></div>
+            <span class="bf-gear" style="display:contents">${fSelG('bf-crank', 'Kurbel', r.crank, CRANK_GROUPS, { wide: true })}</span>
+            <span class="bf-gear" style="display:contents">${fSelG('bf-cassette', 'Kassette', r.cassette, CASSETTE_GROUPS, { wide: true })}</span>
+          </div>
+          <div class="note warn small" id="bf-mix" hidden style="margin-top:10px"></div>
+          <div class="btnrow" style="margin-top:10px"><button class="btn small" type="button" id="bf-ok">Anlegen</button><button class="btn small ghost" type="button" id="bf-cancel">Abbrechen</button><span class="small" id="bf-msg"></span></div>
+        </div>
+        <p class="hint" style="margin-top:10px">Wähle ein Rad – Kurbel, Kassette, Reifen und Radgewicht werden übernommen. Änderungen unten gelten für das gewählte Rad und werden dort gespeichert.</p>
+      </div>
+      <div class="glass card">
+        <div class="section-title"><h2>Antrieb & Trittfrequenz</h2><span class="eyebrow">Shimano & SRAM 11/12/13-fach</span></div>
+        <div class="fields">
+          ${fSelG('crank', 'Kurbel', r.crank, CRANK_GROUPS, { g: 'rider', wide: true })}
           ${fNum('crankCustom', 'Kettenblätter (eigene)', '', r.crankCustom, { g: 'rider', ph: 'z. B. 53/39' })}
-          ${fSel('cassette', 'Kassette', r.cassette, [['11-34', '11-34 (12-fach)'], ['11-36', '11-36 (12-fach)'], ['custom', 'Eigene …']], { g: 'rider', wide: true })}
+          ${fSelG('cassette', 'Kassette', r.cassette, CASSETTE_GROUPS, { g: 'rider', wide: true })}
           ${fNum('cassetteCustom', 'Ritzel (eigene)', '', r.cassetteCustom, { g: 'rider', ph: '11,12,13,…' })}
           ${fNum('tireMm', 'Reifenbreite', 'mm', r.tireMm, { g: 'rider' })}
           ${fNum('circMm', 'Abrollumfang', 'mm', r.circMm, { g: 'rider', ph: 'auto' })}
@@ -2220,14 +2324,108 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
           ${fNum('cadClimb', 'Wunsch-TF ab 8 %', 'U/min', r.cadClimb, { g: 'rider' })}
           ${fNum('cadMax', 'Max. Trittfrequenz', 'U/min', r.cadMax, { g: 'rider', hint: 'bestimmt, ab wann bergab gerollt wird' })}
         </div>
-        <p class="hint" style="margin-top:10px">Ritzel 105 laut Shimano: 11-34 = 11-12-13-14-15-17-19-21-24-27-30-34, 11-36 = 11-12-13-14-15-17-19-21-24-28-32-36. Abrollumfang leer = aus Reifenbreite geschätzt (π × (622 + 2 × Breite)). Referenz: Profis fuhren im Rennen ca. 89–92 U/min in Ebene und Zeitfahren und ca. 71 U/min an Pässen (Lucía et al. 2001).</p>
+        <div class="note warn small" id="gear-mix" hidden style="margin-top:12px"></div>
+        <p class="hint" style="margin-top:10px" id="gear-cogs"></p>
+        <p class="hint" style="margin-top:6px">Abrollumfang leer = aus Reifenbreite geschätzt (π × (622 + 2 × Breite)). Referenz: Profis fuhren im Rennen ca. 89–92 U/min in Ebene und Zeitfahren und ca. 71 U/min an Pässen (Lucía et al. 2001).</p>
       </div>`;
     const v = $('#v-rider');
     v.addEventListener('input', onField);
     v.addEventListener('change', onField);
     $('#cp-go').addEventListener('click', runCP);
     $('#cal-go').addEventListener('click', runCal);
+    bindBikes();
     syncRiderDisabled();
+  }
+
+  /* ------------------------------------------------ Rad-Verwaltung */
+  function gearWarning(ck, cs) {
+    if (!ck || !cs) return '';
+    if (ck.speed !== cs.speed) return `Kurbel ${ck.speed}-fach, Kassette ${cs.speed}-fach: Diese Kombination passt nicht zusammen. Die App rechnet trotzdem damit.`;
+    if (ck.speed === 12 && ck.brand !== cs.brand) return `Kurbel von ${ck.brand}, Kassette von ${cs.brand}: Diese Kombination ist in der Praxis meist nicht fahrbar (Schaltwerk, Freilauf). Die App rechnet trotzdem damit.`;
+    return '';
+  }
+  function bikeGearText(b) {
+    const ck = CRANKS_M[b.crank], cs = CASSETTES_M[b.cassette];
+    const f = ck ? (ck.v.length === 1 ? '1×' : '') + ck.label : (b.crankCustom || 'eigene Kurbel');
+    const c = cs ? cs.label : 'eigene Kassette';
+    return `${f} · ${c}`;
+  }
+  function renderBikes() {
+    const opts = S.bikes.map(b => `<option value="${esc(b.id)}"${b.id === S.bikeId ? ' selected' : ''}>${esc(b.name)} – ${esc(bikeGearText(b))}</option>`).join('');
+    const sel = $('#bikeSel'); if (sel) sel.innerHTML = opts;
+    const ps = $('#planBike'); if (ps) ps.innerHTML = S.bikes.map(b => `<option value="${esc(b.id)}"${b.id === S.bikeId ? ' selected' : ''}>${esc(b.name)}</option>`).join('');
+    const del = $('#bike-del'); if (del) { del.disabled = S.bikes.length < 2; del.style.opacity = del.disabled ? .5 : 1; }
+  }
+  function fillBikeFields() {
+    BIKE_KEYS.forEach(k => { const el = $('#' + k); if (el) el.value = el.tagName === 'SELECT' ? S.rider[k] : (S.rider[k] === null || S.rider[k] === undefined ? '' : String(S.rider[k]).replace('.', ',')); });
+  }
+  function selectBike(id) {
+    if (!S.bikes.some(b => b.id === id)) return;
+    S.bikeId = id;
+    BIKE_KEYS.forEach(k => { if (activeBike()[k] !== undefined) S.rider[k] = activeBike()[k]; });
+    fillBikeFields(); syncRiderDisabled(); renderBikes(); closeBikeForm();
+    persist(); schedule();
+  }
+  let bikeFormMode = null, delArmed = null;
+  function openBikeForm(mode) {
+    bikeFormMode = mode;
+    const f = $('#bike-form'); f.hidden = false;
+    $$('#bike-form .bf-gear').forEach(x => { x.style.display = mode === 'new' ? 'contents' : 'none'; });
+    $('#bf-ok').textContent = mode === 'new' ? 'Anlegen' : 'Speichern';
+    $('#bf-msg').textContent = '';
+    $('#bf-name').value = mode === 'new' ? '' : activeBike().name;
+    if (mode === 'new') {
+      $('#bf-crank').value = CRANKS_M[S.rider.crank] || S.rider.crank === 'custom' ? S.rider.crank : '52/36';
+      $('#bf-cassette').value = CASSETTES_M[S.rider.cassette] || S.rider.cassette === 'custom' ? S.rider.cassette : '11-34';
+      syncBikeForm();
+    }
+    $('#bf-name').focus();
+  }
+  function closeBikeForm() { bikeFormMode = null; const f = $('#bike-form'); if (f) f.hidden = true; }
+  function syncBikeForm() {
+    const m = $('#bf-mix');
+    const msg = gearWarning(CRANKS_M[$('#bf-crank').value], CASSETTES_M[$('#bf-cassette').value]);
+    m.hidden = !msg; m.textContent = msg;
+  }
+  function saveBikeForm() {
+    const name = $('#bf-name').value.trim().replace(/\s+/g, ' ');
+    if (!name) { $('#bf-msg').textContent = 'Bitte einen Namen eintragen.'; $('#bf-name').focus(); return; }
+    if (S.bikes.some(b => b.name.toLowerCase() === name.toLowerCase() && (bikeFormMode === 'new' || b.id !== S.bikeId))) { $('#bf-msg').textContent = 'Diesen Namen gibt es schon.'; return; }
+    if (bikeFormMode === 'rename') {
+      activeBike().name = name; renderBikes(); closeBikeForm(); persist(); renderHeaderSafe(); toast(`Rad umbenannt in „${name}“.`); return;
+    }
+    const b = bikeFrom(S.rider, name);
+    b.crank = $('#bf-crank').value; b.cassette = $('#bf-cassette').value;
+    S.bikes.push(b);
+    selectBike(b.id);
+    toast(`Rad „${name}“ angelegt.`);
+    if (b.crank === 'custom' || b.cassette === 'custom') { const t = $(b.crank === 'custom' ? '#crankCustom' : '#cassetteCustom'); if (t) t.focus(); }
+  }
+  function deleteBike() {
+    const btn = $('#bike-del');
+    if (S.bikes.length < 2) return;
+    if (!delArmed) {
+      btn.textContent = `„${activeBike().name}“ wirklich löschen?`;
+      delArmed = setTimeout(() => { delArmed = null; btn.textContent = 'Löschen'; }, 4000);
+      return;
+    }
+    clearTimeout(delArmed); delArmed = null; btn.textContent = 'Löschen';
+    const name = activeBike().name;
+    S.bikes = S.bikes.filter(b => b.id !== S.bikeId);
+    selectBike(S.bikes[0].id);
+    toast(`Rad „${name}“ gelöscht.`);
+  }
+  function renderHeaderSafe() { if (PLAN) renderHeader(); }
+  function bindBikes() {
+    renderBikes();
+    $('#bikeSel').addEventListener('change', e => selectBike(e.target.value));
+    $('#bike-new').addEventListener('click', () => openBikeForm('new'));
+    $('#bike-ren').addEventListener('click', () => openBikeForm('rename'));
+    $('#bike-del').addEventListener('click', deleteBike);
+    $('#bf-cancel').addEventListener('click', closeBikeForm);
+    $('#bf-ok').addEventListener('click', saveBikeForm);
+    $('#bf-name').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveBikeForm(); } });
+    ['#bf-crank', '#bf-cassette'].forEach(id => $(id).addEventListener('change', syncBikeForm));
   }
 
   function syncRiderDisabled() {
@@ -2235,6 +2433,15 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
     const set = (id, off) => { const el = $('#' + id); if (el) { el.disabled = off; el.closest('.field').style.opacity = off ? .5 : 1; } };
     set('crankCustom', r.crank !== 'custom');
     set('cassetteCustom', r.cassette !== 'custom');
+    const ck = CRANKS_M[r.crank], cs = CASSETTES_M[r.cassette];
+    const mix = $('#gear-mix');
+    if (mix) {
+      const msg = gearWarning(ck, cs);
+      mix.hidden = !msg;
+      mix.textContent = msg;
+    }
+    const cg = $('#gear-cogs');
+    if (cg) cg.textContent = cs ? `Ritzel ${cs.label} (${cs.brand} ${cs.speed}-fach) laut Hersteller: ${cs.v.join('-')}.` : 'Eigene Ritzel: Zähnezahlen mit Komma trennen, z. B. 11,12,13,14,15,17,19,21,24,27,30,34.';
     const circ = $('#circMm');
     if (circ) circ.placeholder = `auto: ${nf(Math.PI * (622 + 2 * (num(r.tireMm) || 28)))}`;
   }
@@ -2253,6 +2460,7 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
       if (k === 'crrPreset' && CRR[val][1]) { obj.crr = CRR[val][1]; $('#crr').value = String(obj.crr).replace('.', ','); }
       if (k === 'crr') { obj.crrPreset = Object.keys(CRR).find(p => CRR[p][1] === num(val)) || 'custom'; $('#crrPreset').value = obj.crrPreset; }
       if (obj.example && ['ftp', 'riderKg', 'cp', 'wprime'].includes(k)) { obj.example = false; const n = $('#ex-note'); if (n) n.remove(); }
+      if (BIKE_KEYS.includes(k)) { activeBike()[k] = val; if (k === 'crank' || k === 'cassette' || k === 'crankCustom') renderBikes(); }
       syncRiderDisabled();
     }
     persist();
@@ -2312,6 +2520,7 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
             ${Object.entries(E.TYPE_INFO).map(([k, v]) => `<button type="button" data-type="${k}" aria-pressed="${c.type === k}">${esc(v.label.split(' / ')[0])}</button>`).join('')}
           </div>
           <div class="hint">Setzt einen Startwert für die Intensität, den du in Schritt 2 anpasst.</div>
+          <div class="fields" style="margin-top:10px"><div class="field wide"><label for="planBike">Rad</label><div class="inp"><select id="planBike"></select></div><div class="hint">Übersetzung und Radgewicht kommen vom gewählten Rad (anlegen unter „Fahrer & Rad“).</div></div></div>
         </div></div>
 
         <div class="step"><span class="stepno">2</span><div class="stepbody">
@@ -2397,6 +2606,8 @@ const PDF_WIDTHS = { R: [278,278,355,556,556,889,667,191,333,333,389,584,278,333
       S.race.targetTime = (h || m) ? `${h}:${String(m).padStart(2, '0')}` : '';
       persist(); schedule();
     }));
+    $('#planBike').addEventListener('change', e => selectBike(e.target.value));
+    renderBikes();
     setIntMode(c.intMode || 'if');
     syncControls();
   }
